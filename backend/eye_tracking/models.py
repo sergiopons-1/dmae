@@ -2,8 +2,8 @@ from django.db import models
 
 # Create your models here.
 from django.db import models
-from backend.usuarios.models import Paciente
-from backend.juego.models import Rehabilitacion
+from usuarios.models import Paciente
+from juego.models import Rehabilitacion
 
 class AjustesPaciente(models.Model):
     paciente = models.OneToOneField(Paciente, on_delete=models.CASCADE, primary_key=True)

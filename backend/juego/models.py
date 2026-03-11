@@ -2,7 +2,7 @@ from django.db import models
 
 # Create your models here.
 from django.db import models
-from backend.usuarios.models import Paciente, Especialista
+from usuarios.models import Paciente, Especialista
 
 class Minijuego(models.Model):
     idMinijuego = models.AutoField(primary_key=True)

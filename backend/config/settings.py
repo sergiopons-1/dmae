@@ -37,10 +37,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'backend.usuarios',
-    'backend.juego',
-    'backend.eye_tracking',
-    'backend.autenticacion',
+    'usuarios',
+    'juego',
+    'eye_tracking',
+    'autenticacion',
 ]
 
 MIDDLEWARE = [
@@ -84,7 +84,7 @@ DATABASES = {
 }
 
 # ── Modelo de usuario personalizado ──
-AUTH_USER_MODEL = "backend.usuarios.Usuario"
+AUTH_USER_MODEL = "usuarios.Usuario"
 
 
 # Password validation
