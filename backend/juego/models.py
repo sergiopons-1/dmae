@@ -1,8 +1,6 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
-from usuarios.models import Paciente, Especialista
+from usuarios.models import Usuario
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 class Minijuego(models.Model):
     idMinijuego = models.AutoField(primary_key=True)
@@ -13,7 +11,7 @@ class Minijuego(models.Model):
 
 class Progreso(models.Model):
     idProgreso = models.AutoField(primary_key=True)
-    paciente = models.OneToOneField(Paciente, on_delete=models.CASCADE)
+    paciente = models.OneToOneField(Usuario, on_delete=models.CASCADE, limit_choices_to={'rol': 'paciente'})
 
     class Meta:
         db_table = "progreso"
@@ -26,10 +24,10 @@ class Rehabilitacion(models.Model):
 
     idRehabilitacion = models.AutoField(primary_key=True)
     progreso = models.ForeignKey(Progreso, on_delete=models.CASCADE)
-    estado = models.CharField(max_length=20, choices=EstadoRehabilitacion.choices, default=EstadoRehabilitacion.PENDIENTE)
+    estado = models.CharField(choices=EstadoRehabilitacion.choices, default=EstadoRehabilitacion.PENDIENTE)
     fechaInicio = models.DateTimeField(auto_now_add=True)
     fechaFin = models.DateTimeField(null=True, blank=True)
-    puntuacionRehabilitacion = models.IntegerField(default=0)
+    puntuacionRehabilitacion = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(15)])
 
     class Meta:
         db_table = "rehabilitacion"
@@ -40,12 +38,20 @@ class Edificio(models.Model):
         EN_CURSO    = "en_curso",   "En curso"
         RESTAURADO  = "restaurado", "Restaurado"
 
+    class NombreEdificio(models.TextChoices):
+        BIBLIOTECA = "biblioteca", "Biblioteca"
+        HUERTO = "huerto", "Huerto"
+        MUSEO = "museo", "Museo"
+        MERCADILLO = "mercadillo", "Mercadillo"
+        CAMPANARIO = "campanario", "Campanario"
+
+
     idEdificio = models.AutoField(primary_key=True)
     rehabilitacion = models.ForeignKey(Rehabilitacion, on_delete=models.CASCADE)
     minijuego = models.ForeignKey(Minijuego, on_delete=models.SET_NULL, null=True)
-    nombre = models.CharField(max_length=255)
-    estadoEdificio = models.CharField(max_length=20, choices=EstadoEdificio.choices, default=EstadoEdificio.BLOQUEADO)
-    puntuacionEdificio = models.IntegerField(default=0)
+    nombre = models.CharField(choices=NombreEdificio.choices, default=NombreEdificio.BIBLIOTECA)
+    estadoEdificio = models.CharField(choices=EstadoEdificio.choices, default=EstadoEdificio.BLOQUEADO)
+    puntuacionEdificio = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(3)])
 
     class Meta:
         db_table = "edificio"
@@ -53,8 +59,8 @@ class Edificio(models.Model):
 class Notas(models.Model):
     idNota = models.AutoField(primary_key=True)
     progreso = models.ForeignKey(Progreso, on_delete=models.CASCADE)
-    especialista = models.ForeignKey(Especialista, on_delete=models.SET_NULL, null=True)
-    contenido = models.CharField(max_length=255)
+    especialista = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True, limit_choices_to={'rol': 'especialista'})
+    contenido = models.CharField(max_length=500)
     fechaNota = models.DateTimeField(auto_now_add=True)
 
     class Meta:

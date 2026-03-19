@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator, MinLengthValidator
 
-# Create your models here.
-from django.db import models
 
 class Clinica(models.Model):
     idClinica = models.AutoField(primary_key=True)
@@ -11,41 +9,50 @@ class Clinica(models.Model):
     direccion = models.CharField(max_length=255)
     codigoPostal = models.CharField(max_length=5, validators=[MinLengthValidator(5)])
 
+    def __str__(self):
+        return self.nombre + " (" + self.direccion + ")"
+    
     class Meta:
         db_table = "clinica"
 
+
 class Usuario(AbstractUser):
-    ROL_ESPECIALISTA = "especialista"
-    ROL_PACIENTE = "paciente"
-
     ROL_CHOICES = [
-        (ROL_ESPECIALISTA, "Especialista"),
-        (ROL_PACIENTE, "Paciente"),
+        ('especialista', 'Especialista'),
+        ('paciente', 'Paciente'),
     ]
-
     rol = models.CharField(max_length=20, choices=ROL_CHOICES)
 
-    @property
-    def nombre(self):
-        return self.first_name
+    def es_especialista(self):
+        return self.rol == 'especialista'
 
-    @property
-    def apellidos(self):
-        return self.last_name
+    def es_paciente(self):
+        return self.rol == 'paciente'
 
     class Meta:
         db_table = "usuario"
-
+    
 class Especialista(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, primary_key=True)
-    clinica = models.ForeignKey("Clinica", on_delete=models.CASCADE, null=True)
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
+    clinica = models.ForeignKey(Clinica, on_delete=models.SET_NULL, null=True)
+    @property
+    def nombre(self):
+        return self.usuario.first_name
 
+    @property
+    def apellidos(self):
+        return self.usuario.last_name
+    
     class Meta:
         db_table = "especialista"
 
 class Paciente(models.Model):
-    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, primary_key=True)
-    especialista = models.ForeignKey(Especialista, on_delete=models.SET_NULL, null=True)
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
+    especialista = models.ForeignKey(
+        Especialista,
+        on_delete=models.SET_NULL,
+        null=True
+    )
     dni = models.CharField(
         max_length=9,
         unique=True,

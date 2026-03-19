@@ -1,12 +1,9 @@
 from django.db import models
-
-# Create your models here.
-from django.db import models
-from usuarios.models import Paciente
+from usuarios.models import Usuario
 from juego.models import Rehabilitacion
 
 class AjustesPaciente(models.Model):
-    paciente = models.OneToOneField(Paciente, on_delete=models.CASCADE, primary_key=True)
+    paciente = models.OneToOneField(Usuario, on_delete=models.CASCADE, primary_key=True, limit_choices_to={'rol': 'paciente'})
     esta_calibrado = models.BooleanField(default=False)
     gesto_clic = models.CharField(max_length=50)
     gesto_doble_clic = models.CharField(max_length=50)
