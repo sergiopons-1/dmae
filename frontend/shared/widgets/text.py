@@ -7,8 +7,10 @@ PRIMARY = "#0E4C66"
 class TextoInicio(QWidget):
     clicked = pyqtSignal()
 
-    def __init__(self, label: str = "", tamano: int = 11, negrita: bool = False, upper: bool = False, color: str = PRIMARY, accion=None, parent=None):
+    def __init__(self, label: str = "", tamano: int = 11, negrita: bool = False, error:bool = False, upper: bool = False, color: str = PRIMARY, accion=None, parent=None):
         super().__init__(parent)
+        if error:
+            color="#FF0000"
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -120,3 +122,6 @@ class FormField(QWidget):
         else:
             self.input.setEchoMode(QLineEdit.EchoMode.Password)
             self._icono_ojo.setIcon(self._icono_ojo_apagado)
+    
+    def text(self) -> str:
+        return self.input.text()

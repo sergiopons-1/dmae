@@ -60,7 +60,7 @@ class Router(QMainWindow):
         self.stack.addWidget(self.publicar_nota_paciente)
 
         # Pantalla mostrada al ejecutar el programa
-        self.stack.setCurrentWidget(self.pacientes_especialista)
+        self.stack.setCurrentWidget(self.iniciar_sesion)
 
 
     def show_inicio(self):

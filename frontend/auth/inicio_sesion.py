@@ -5,6 +5,7 @@ from shared.widgets.fondo import BeigeBg
 from shared.widgets.text import FormField, TextoInicio
 from shared.widgets.imagenes import Imagenes
 from shared.widgets.layout import CenterLayout
+from api_cliente import login
 
 
 PRIMARY = "#0E4C66"
@@ -38,11 +39,14 @@ class IniciarSesion(QDialog, BeigeBg):
         self.label = TextoInicio(label="Iniciar sesión", tamano=24, upper=True, negrita=True)
         self.nombre_usuario = FormField(label="Nombre de usuario", tamano=14)
         self.contraseña = FormField(label="Contraseña", tamano=14, password=True)
+        self.texto_error = TextoInicio(label="", tamano=12, error=True)
+        self.texto_error.setVisible(False)  
         self.iniciar_sesion = PrimaryButton(text="Iniciar sesión", accion=self.inicio_sesion)
         self.texto = TextoInicio(label="¿No tienes cuenta?, Regístrate", tamano=16, accion=self.registro)
 
         center_layout.addWidget(self.label)
         center_layout.addWidget(self.nombre_usuario)
+        center_layout.addWidget(self.texto_error)
         center_layout.addWidget(self.contraseña)
         center_layout.addWidget(self.iniciar_sesion)
         center_layout.addWidget(self.texto)
@@ -55,5 +59,14 @@ class IniciarSesion(QDialog, BeigeBg):
         self.router.show_specialist_registration()
     
     def inicio_sesion(self):
-        self.router.show_inicio_especialista()
+        username = self.nombre_usuario.text()
+        password = self.contraseña.text()
 
+        status_code, data = login(username, password)
+
+        if status_code == 200:
+            self.token = data['token']
+            self.router.show_inicio_especialista()
+        else:
+            self.texto_error.setText(data.get('error', 'Error desconocido'))
+            self.texto_error.setVisible(True)
