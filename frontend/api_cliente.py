@@ -12,7 +12,7 @@ def login(username, password):
     except requests.exceptions.ConnectionError:
         return None, {"error": "No se puede conectar al servidor"}
 
-def registro(username, password, email, first_name, last_name):
+def singin(username, password, email, first_name, last_name):
     try:
         r = requests.post(f"{BASE_URL}/registro/", json={
             "username": username, "password": password,

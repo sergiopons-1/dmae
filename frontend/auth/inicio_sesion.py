@@ -26,28 +26,26 @@ class IniciarSesion(QDialog, BeigeBg):
         main_layout.setColumnStretch(0, 1)
 
         self.imagen = Imagenes(enlace="assets/images/logo.png", ancho=80, alto=80)
-        main_layout.addWidget(
-            self.imagen,
-            0,
-            0,
-            alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft,
-        )
+        main_layout.addWidget(self.imagen, 0, 0, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft,)
        
         center_layout = CenterLayout(espacio=40)
         center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.label = TextoInicio(label="Iniciar sesión", tamano=24, upper=True, negrita=True)
+        self.label = TextoInicio(label="Inicio sesión especialista", tamano=24, upper=True, negrita=True)
         self.nombre_usuario = FormField(label="Nombre de usuario", tamano=14)
         self.contraseña = FormField(label="Contraseña", tamano=14, password=True)
-        self.texto_error = TextoInicio(label="", tamano=12, error=True)
-        self.texto_error.setVisible(False)  
+        self.error_username = TextoInicio(label="", tamano=12, error=True)
+        self.error_username.setVisible(False)  
         self.iniciar_sesion = PrimaryButton(text="Iniciar sesión", accion=self.inicio_sesion)
+        self.error_contrasena = TextoInicio(label="", tamano=12, error=True)
+        self.error_contrasena.setVisible(False)  
         self.texto = TextoInicio(label="¿No tienes cuenta?, Regístrate", tamano=16, accion=self.registro)
 
         center_layout.addWidget(self.label)
         center_layout.addWidget(self.nombre_usuario)
-        center_layout.addWidget(self.texto_error)
+        center_layout.addWidget(self.error_username)
         center_layout.addWidget(self.contraseña)
+        center_layout.addWidget(self.error_contrasena)
         center_layout.addWidget(self.iniciar_sesion)
         center_layout.addWidget(self.texto)
 
@@ -57,16 +55,38 @@ class IniciarSesion(QDialog, BeigeBg):
 
     def registro(self):
         self.router.show_specialist_registration()
+        self.nombre_usuario.input.clear()
+        self.contraseña.input.clear()
     
     def inicio_sesion(self):
         username = self.nombre_usuario.text()
         password = self.contraseña.text()
+        self.contraseña.input.clear()
 
         status_code, data = login(username, password)
 
         if status_code == 200:
             self.token = data['token']
             self.router.show_inicio_especialista()
+            self.nombre_usuario.input.clear()
+            self.error_username.setVisible(False)
+            self.error_contrasena.setVisible(False)
         else:
-            self.texto_error.setText(data.get('error', 'Error desconocido'))
-            self.texto_error.setVisible(True)
+            error = data.get('error', 'Error desconocido')
+            if error == 'Nombre de usuario incorrecto':
+                self.error_username.setText('Nombre de usuario incorrecto')
+                self.error_username.setVisible(True)
+                self.error_contrasena.setVisible(False)
+            elif error == 'Contraseña incorrecta':
+                self.error_contrasena.setText('Contraseña incorrecta')
+                self.error_contrasena.setVisible(True)
+                self.error_username.setVisible(False)
+            elif error == 'El usuario no es especialista':
+                self.error_username.setText('Nombre de usuario incorrecto')
+                self.error_username.setVisible(True)
+                self.error_contrasena.setVisible(False)
+            else:
+                self.error_username.setText(error)
+                self.error_contrasena.setText(error)
+                self.error_username.setVisible(True)
+                self.error_contrasena.setVisible(True)
