@@ -34,10 +34,12 @@ def login(request):
     user.save(update_fields=['last_login'])
 
     refresh = RefreshToken.for_user(user)
+    nombre_completo = user.get_full_name().strip() or user.username
     return Response({
         'token': str(refresh.access_token),
         'rol': user.rol,
-        'nombre': user.get_full_name(),
+        'nombre': nombre_completo,
+        'email': user.email,
     })
 
 @api_view(['POST'])
@@ -94,4 +96,15 @@ def registro(request):
     user.save(update_fields=['last_login'])
     
     refresh = RefreshToken.for_user(user)
-    return Response({'token': str(refresh.access_token)}, status=status.HTTP_201_CREATED)
+    nombre_completo = user.get_full_name().strip() or user.username
+    return Response(
+        {'token': str(refresh.access_token), 'nombre': nombre_completo, 'email': user.email},
+        status=status.HTTP_201_CREATED,
+    )
+
+@api_view(['GET'])
+def nombre(request, name):
+    user = Usuario.objects.filter(username=name).first()
+    if user and user.rol == 'especialista':
+        return Response({'nombre': user.get_full_name()})
+    return Response({'error': 'Especialista no encontrado'}, status=status.HTTP_404_NOT_FOUND)

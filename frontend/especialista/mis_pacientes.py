@@ -16,6 +16,7 @@ class PacientesEspecialista(QWidget):
     def __init__(self, router, nombre="Carlos Mateo"):
         super().__init__()
         self.router = router
+        self.nombre_especialista = nombre
         self._datos = []
         self._datos_filtrados = []
         self.setStyleSheet(f"background-color: {BG_COLOR};")
@@ -79,6 +80,10 @@ class PacientesEspecialista(QWidget):
 
         # Cargar datos de ejemplo
         self._cargar_datos_ejemplo()
+
+    def set_nombre_especialista(self, nombre: str):
+        self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
+        self.sidebar.set_nombre(self.nombre_especialista)
 
     # ── Datos ─────────────────────────────────────────────────
     def _cargar_datos_ejemplo(self):

@@ -9,6 +9,7 @@ class PerfilEspecialista(QWidget):
     def __init__(self, router, nombre="Carlos Mateo"):
         super().__init__()
         self.router = router
+        self.nombre_especialista = nombre
 
         main = QHBoxLayout(self)
         main.setContentsMargins(0, 0, 0, 0)
@@ -41,6 +42,24 @@ class PerfilEspecialista(QWidget):
         center_widget.setStyleSheet("background-color: #FFF7E7;")
         center_widget.setLayout(center_layout)
         main.addWidget(center_widget)
+
+    def set_nombre_especialista(self, nombre: str):
+        self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
+        self.sidebar.set_nombre(self.nombre_especialista)
+
+    def set_datos_especialista(self, username: str, nombre: str, email: str = ""):
+        nombre_limpio = (nombre or "Especialista").strip() or "Especialista"
+        self.set_nombre_especialista(nombre_limpio)
+
+        if " " in nombre_limpio:
+            first_name, last_name = nombre_limpio.split(" ", 1)
+        else:
+            first_name, last_name = nombre_limpio, ""
+
+        self.nombre_usuario.dato.setText(username or "-")
+        self.nombre.dato.setText(first_name)
+        self.apellidos.dato.setText(last_name or "-")
+        self.correo.dato.setText(email or "-")
 
     def cambio_contrasena(self):
         self.router.show_cambiar_contrasena()

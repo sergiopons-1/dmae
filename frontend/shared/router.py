@@ -19,6 +19,10 @@ from especialista.escribir_notas import PublicarNota
 class Router(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.auth_token = None
+        self.especialista_nombre = "Especialista"
+        self.especialista_username = ""
+        self.especialista_email = ""
 
         self.setWindowTitle("Pueblo a la Vista")
         logo_path = Path(__file__).resolve().parents[1] / "assets" / "images" / "logo.png"
@@ -62,8 +66,45 @@ class Router(QMainWindow):
         # Pantalla mostrada al ejecutar el programa
         self.stack.setCurrentWidget(self.iniciar_sesion)
 
+    def _sync_specialist_name(self):
+        vistas = [
+            self.inicio_especialista,
+            self.perfil_especialista,
+            self.cambiar_contrasena,
+            self.pacientes_especialista,
+            self.registrar_paciente,
+            self.generar_codigo,
+            self.progreso_individual,
+            self.publicar_nota_paciente,
+        ]
+        for vista in vistas:
+            if hasattr(vista, "set_nombre_especialista"):
+                vista.set_nombre_especialista(self.especialista_nombre)
+
+        if hasattr(self.perfil_especialista, "set_datos_especialista"):
+            self.perfil_especialista.set_datos_especialista(
+                username=self.especialista_username,
+                nombre=self.especialista_nombre,
+                email=self.especialista_email,
+            )
+
+    def set_specialist_session(self, token: str, nombre: str, username: str = "", email: str = ""):
+        self.auth_token = token
+        self.especialista_nombre = (nombre or "Especialista").strip() or "Especialista"
+        self.especialista_username = username or ""
+        self.especialista_email = email or ""
+        self._sync_specialist_name()
+
+    def clear_specialist_session(self):
+        self.auth_token = None
+        self.especialista_nombre = "Especialista"
+        self.especialista_username = ""
+        self.especialista_email = ""
+        self._sync_specialist_name()
+
 
     def show_inicio(self):
+        self.clear_specialist_session()
         self.stack.setCurrentWidget(self.inicio)
 
     def show_specialist_login(self):

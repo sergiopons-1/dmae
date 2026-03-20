@@ -7,6 +7,7 @@ class InicioEspecialista(QWidget):
     def __init__(self, router, nombre="Carlos Mateo"):
         super().__init__()
         self.router = router
+        self.nombre_especialista = nombre
 
         main = QHBoxLayout(self)
         main.setContentsMargins(0, 0, 0, 0)
@@ -18,6 +19,10 @@ class InicioEspecialista(QWidget):
 
         self.contenido = FondoConOverlay("assets/images/foto_pueblo.png")
         main.addWidget(self.contenido, stretch=1)
+
+    def set_nombre_especialista(self, nombre: str):
+        self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
+        self.sidebar.set_nombre(self.nombre_especialista)
 
 class FondoConOverlay(QWidget):
     def __init__(self, ruta_imagen: str, parent=None):

@@ -22,3 +22,4 @@ def singin(username, password, email, first_name, last_name):
         return r.status_code, r.json()
     except requests.exceptions.ConnectionError:
         return None, {"error": "No se puede conectar al servidor"}
+        

@@ -12,6 +12,7 @@ class GenerarCodigoPaciente(QDialog):
     def __init__(self, router, nombre="Carlos Mateo"):
         super().__init__()
         self.router = router
+        self.nombre_especialista = nombre
 
         main = QHBoxLayout(self)
         main.setContentsMargins(0, 0, 0, 0)
@@ -38,6 +39,10 @@ class GenerarCodigoPaciente(QDialog):
         center_widget.setStyleSheet("background-color: #FFF7E7;")
         center_widget.setLayout(center_layout)
         main.addWidget(center_widget)
+
+    def set_nombre_especialista(self, nombre: str):
+        self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
+        self.sidebar.set_nombre(self.nombre_especialista)
 
     def showEvent(self, event):
         self.codigo.setText(self._generar_codigo())

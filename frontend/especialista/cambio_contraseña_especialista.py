@@ -17,6 +17,7 @@ class CambiarContraseña(QDialog, BeigeBg):
     def __init__(self, router):
         super().__init__()
         self.router = router
+        self.nombre_especialista = "Especialista"
         self.a()
 
     def a(self):
@@ -42,6 +43,10 @@ class CambiarContraseña(QDialog, BeigeBg):
         center_layout.addWidget(self.cambiar_contrasena)
 
         main_layout.addLayout(center_layout)
+
+    def set_nombre_especialista(self, nombre: str):
+        self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
+        self.texto1.setText(f"Hola {self.nombre_especialista}")
 
     def cambio_contrasena(self):
         self.router.show_specialist_login()

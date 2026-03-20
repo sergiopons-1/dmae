@@ -89,10 +89,15 @@ class Sidebar(QWidget):
         col.addWidget(foto, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         
-        nombre_lbl = TextoInicio(label = self.nombre, tamano=13, color=SIDEBAR_TEXT, negrita=True)
-        col.addWidget(nombre_lbl)
+        self.nombre_lbl = TextoInicio(label=self.nombre, tamano=13, color=SIDEBAR_TEXT, negrita=True)
+        col.addWidget(self.nombre_lbl)
 
         return header
+
+    def set_nombre(self, nombre: str):
+        self.nombre = (nombre or "Especialista").strip() or "Especialista"
+        if hasattr(self, "nombre_lbl"):
+            self.nombre_lbl.setText(self.nombre)
 
     
 

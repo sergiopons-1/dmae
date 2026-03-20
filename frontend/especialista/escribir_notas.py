@@ -9,6 +9,7 @@ class PublicarNota(QDialog):
     def __init__(self, router, nombre="Carlos Mateo"):
         super().__init__()
         self.router = router
+        self.nombre_especialista = nombre
 
         main = QHBoxLayout(self)
         main.setContentsMargins(0, 0, 0, 0)
@@ -35,6 +36,11 @@ class PublicarNota(QDialog):
         center_widget.setStyleSheet("background-color: #FFF7E7;")
         center_widget.setLayout(center_layout)
         main.addWidget(center_widget)
+
+    def set_nombre_especialista(self, nombre: str):
+        self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
+        self.sidebar.set_nombre(self.nombre_especialista)
+        self.titulo_nota.setText(f"Nueva nota para {self.nombre_especialista}")
 
 
     def publicar_nota(self):

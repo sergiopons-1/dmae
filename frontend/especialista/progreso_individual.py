@@ -14,6 +14,7 @@ class ProgresoIndividual(QWidget):
     def __init__(self, router, nombre="Carlos Mateo"):
         super().__init__()
         self.router = router
+        self.nombre_especialista = nombre
         self._nombre_paciente = nombre
         self._datos_progreso = []
         self._notas_por_paciente = {
@@ -140,6 +141,10 @@ class ProgresoIndividual(QWidget):
         # Cargar datos de ejemplo
         self._cargar_datos_ejemplo()
         self._actualizar_notas_tabla()
+
+    def set_nombre_especialista(self, nombre: str):
+        self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
+        self.sidebar.set_nombre(self.nombre_especialista)
 
     # ── Datos ─────────────────────────────────────────────────
     def _cargar_datos_ejemplo(self):

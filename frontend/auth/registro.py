@@ -119,6 +119,12 @@ class Registro(QDialog, BeigeBg):
         status_code, data = singin(username, password, email, first_name, last_name)
 
         if status_code == 201:
+            self.router.set_specialist_session(
+                token=data.get('token', ''),
+                nombre=data.get('nombre', f'{first_name} {last_name}'.strip()),
+                username=username,
+                email=data.get('email', email),
+            )
             self.router.show_inicio_especialista()
             self.nombre_usuario.input.clear()
             self.correo.input.clear()
