@@ -23,6 +23,7 @@ class Router(QMainWindow):
         self.especialista_nombre = "Especialista"
         self.especialista_username = ""
         self.especialista_email = ""
+        self.clinic_id = None
 
         self.setWindowTitle("Pueblo a la Vista")
         logo_path = Path(__file__).resolve().parents[1] / "assets" / "images" / "logo.png"
@@ -88,11 +89,12 @@ class Router(QMainWindow):
                 email=self.especialista_email,
             )
 
-    def set_specialist_session(self, token: str, nombre: str, username: str = "", email: str = ""):
+    def set_specialist_session(self, token: str, nombre: str, username: str = "", email: str = "", clinic_id=None):
         self.auth_token = token
         self.especialista_nombre = (nombre or "Especialista").strip() or "Especialista"
         self.especialista_username = username or ""
         self.especialista_email = email or ""
+        self.clinic_id = clinic_id
         self._sync_specialist_name()
 
     def clear_specialist_session(self):
@@ -100,6 +102,7 @@ class Router(QMainWindow):
         self.especialista_nombre = "Especialista"
         self.especialista_username = ""
         self.especialista_email = ""
+        self.clinic_id = None
         self._sync_specialist_name()
 
 
@@ -125,6 +128,8 @@ class Router(QMainWindow):
         self.stack.setCurrentWidget(self.cambiar_contrasena)
 
     def show_pacientes_especialista(self):
+        if hasattr(self.pacientes_especialista, "recargar_pacientes"):
+            self.pacientes_especialista.recargar_pacientes()
         self.stack.setCurrentWidget(self.pacientes_especialista)
 
     def show_registrar_paciente(self):

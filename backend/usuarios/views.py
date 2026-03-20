@@ -40,6 +40,7 @@ def login(request):
         'rol': user.rol,
         'nombre': nombre_completo,
         'email': user.email,
+        'clinic_id': user.clinica_id,
     })
 
 @api_view(['POST'])
@@ -98,7 +99,12 @@ def registro(request):
     refresh = RefreshToken.for_user(user)
     nombre_completo = user.get_full_name().strip() or user.username
     return Response(
-        {'token': str(refresh.access_token), 'nombre': nombre_completo, 'email': user.email},
+        {
+            'token': str(refresh.access_token),
+            'nombre': nombre_completo,
+            'email': user.email,
+            'clinic_id': user.clinica_id,
+        },
         status=status.HTTP_201_CREATED,
     )
 

@@ -22,6 +22,7 @@ class Usuario(AbstractUser):
         ('paciente', 'Paciente'),
     ]
     rol = models.CharField(max_length=20, choices=ROL_CHOICES)
+    clinica = models.ForeignKey(Clinica, on_delete=models.SET_NULL, null=True)
 
     def es_especialista(self):
         return self.rol == 'especialista'
@@ -34,7 +35,6 @@ class Usuario(AbstractUser):
     
 class Especialista(models.Model):
     usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE)
-    clinica = models.ForeignKey(Clinica, on_delete=models.SET_NULL, null=True)
     @property
     def nombre(self):
         return self.usuario.first_name

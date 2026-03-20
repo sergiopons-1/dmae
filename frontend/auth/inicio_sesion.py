@@ -71,6 +71,7 @@ class IniciarSesion(QDialog, BeigeBg):
                 nombre=data.get('nombre', ''),
                 username=username,
                 email=data.get('email', ''),
+                clinic_id=data.get('clinic_id'),
             )
             self.router.show_inicio_especialista()
             self.nombre_usuario.input.clear()

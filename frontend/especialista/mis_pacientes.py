@@ -2,6 +2,7 @@ from shared.widgets.especialista.sidebar import Sidebar
 from shared.widgets.text import TextoInicio
 from shared.widgets.buttons import PrimaryButton
 from shared.widgets.tabla import TablaPacientes
+from api_cliente import obtener_pacientes_clinica
 from PyQt6.QtWidgets import (
     QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget, QLineEdit
 )
@@ -78,29 +79,29 @@ class PacientesEspecialista(QWidget):
         main.setStretch(0, 3)
         main.setStretch(1, 7)
 
-        # Cargar datos de ejemplo
-        self._cargar_datos_ejemplo()
+        self._actualizar_tabla()
 
     def set_nombre_especialista(self, nombre: str):
         self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
         self.sidebar.set_nombre(self.nombre_especialista)
 
     # ── Datos ─────────────────────────────────────────────────
-    def _cargar_datos_ejemplo(self):
-        """Sustituye este método por la llamada real a la API Django."""
-        self._datos = [
-            {"nombre": "Antonio", "apellidos": "Rodríguez Domínguez", "rehabilitaciones": 11, "especialista": "Carlos Mateo"},
-            {"nombre": "Pedro",   "apellidos": "Ruiz Sánchez",        "rehabilitaciones": 11, "especialista": "Carlos Mateo"},
-            {"nombre": "Marta",   "apellidos": "López García",         "rehabilitaciones": 14, "especialista": "Carlos Mateo"},
-            {"nombre": "Carlos",  "apellidos": "Pérez Rubio",          "rehabilitaciones": 8,  "especialista": "Carlos Mateo"},
-            {"nombre": "Javier",  "apellidos": "Navarro Díaz",         "rehabilitaciones": 7,  "especialista": "Carlos Mateo"},
-            {"nombre": "Diego",   "apellidos": "Romero Rubio",         "rehabilitaciones": 12, "especialista": "Carlos Mateo"},
-            {"nombre": "Paula",   "apellidos": "Martínez León",        "rehabilitaciones": 6,  "especialista": "Carlos Mateo"},
-            {"nombre": "Ana",     "apellidos": "Romero Herrera",       "rehabilitaciones": 4,  "especialista": "Carlos Mateo"},
-            {"nombre": "Alejandro","apellidos":"Castillo Torres",       "rehabilitaciones": 3,  "especialista": "Juan Carlos Aguilar"},
-            {"nombre": "Lucía",   "apellidos": "Fernández Mora",       "rehabilitaciones": 9,  "especialista": "Carlos Mateo"},
-            {"nombre": "Raúl",    "apellidos": "Gómez Herrera",        "rehabilitaciones": 5,  "especialista": "Carlos Mateo"},
-        ]
+    def recargar_pacientes(self):
+        clinic_id = getattr(self.router, "clinic_id", None)
+        token = getattr(self.router, "auth_token", None)
+
+        if not clinic_id:
+            self._datos = []
+            self._datos_filtrados = []
+            self._actualizar_tabla()
+            return
+
+        status_code, data = obtener_pacientes_clinica(clinic_id, token)
+        if status_code == 200 and isinstance(data, list):
+            self._datos = data
+        else:
+            self._datos = []
+
         self._datos_filtrados = self._datos.copy()
         self._actualizar_tabla()
 

@@ -29,6 +29,7 @@ CONTENIDOS_NOTAS = [
 class Command(BaseCommand):
     #Clínicas
     def crear_clinicas(self):
+        self.stdout.write(self.style.SUCCESS('▶ Creando clínicas...'))
         datos = [
             {'nombre': 'Clínica Sevilla Centro', 'direccion': 'Calle Sierpes 10',  'codigoPostal': '41001'},
             {'nombre': 'Clínica Norte',           'direccion': 'Av. Kansas City 5', 'codigoPostal': '41013'},
@@ -53,6 +54,7 @@ class Command(BaseCommand):
         ]
         especialistas = []
         for i, d in enumerate(datos):
+            clinica_asignada = clinicas[i % len(clinicas)]
             usuario, created = Usuario.objects.get_or_create(
                 username=d['username'],
                 defaults={
@@ -61,15 +63,15 @@ class Command(BaseCommand):
                     'email':      d['email'],
                     'password':   make_password('password123'),
                     'rol':        'especialista',
+                    'clinica':    clinica_asignada,
                 }
             )
             esp, _ = Especialista.objects.get_or_create(
-                usuario=usuario,
-                defaults={'clinica': clinicas[i % len(clinicas)]}
+                usuario=usuario
             )
             especialistas.append(esp)
             if created:
-                self.stdout.write(f'  ✔ Especialista: {usuario.get_full_name()}')
+                self.stdout.write(f'  ✔ Especialista: {usuario.get_full_name()} - Clínica: {clinica_asignada.nombre}')
         return especialistas
  
     # Pacientes
@@ -86,6 +88,10 @@ class Command(BaseCommand):
         ]
         pacientes = []
         for i, d in enumerate(datos):
+            especialista_asignado = especialistas[i % len(especialistas)]
+            # La clínica del paciente es la misma que la del especialista que lo atiende (acceso vía usuario)
+            clinica_asignada = especialista_asignado.usuario.clinica
+            
             usuario, created = Usuario.objects.get_or_create(
                 username=d['username'],
                 defaults={
@@ -94,12 +100,13 @@ class Command(BaseCommand):
                     'email':      d['email'],
                     'password':   make_password('password123'),
                     'rol':        'paciente',
+                    'clinica':    clinica_asignada,
                 }
             )
             pac, _ = Paciente.objects.get_or_create(
                 usuario=usuario,
                 defaults={
-                    'especialista':        especialistas[i % len(especialistas)],
+                    'especialista':        especialista_asignado,
                     'dni':                 d['dni'],
                     'fechaNacimiento':     d['fecha'],
                     'codigoInicioSesion':  f'COD{i:04d}',
@@ -107,7 +114,7 @@ class Command(BaseCommand):
             )
             pacientes.append(pac)
             if created:
-                self.stdout.write(f'  ✔ Paciente: {usuario.get_full_name()}')
+                self.stdout.write(f'  ✔ Paciente: {usuario.get_full_name()} - Clínica: {clinica_asignada.nombre}')
         return pacientes
  
     # Ajustes de paciente (eye_tracking)
