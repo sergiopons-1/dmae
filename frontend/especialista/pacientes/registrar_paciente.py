@@ -98,6 +98,11 @@ class RegistrarPaciente(QDialog):
             return
 
         token = getattr(self.router, "auth_token", None)
+        if not token:
+            self.label_error.setText("Tu sesion no es valida. Inicia sesion de nuevo")
+            self.label_error.setVisible(True)
+            return
+
         status_code, data = singin_paciente(
             username=username,
             dni=dni,

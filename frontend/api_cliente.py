@@ -11,6 +11,24 @@ def _network_error_response(exc):
         return None, {"error": "No se puede conectar al servidor"}
     return None, {"error": "Error de red al comunicarse con el servidor"}
 
+
+def _normalize_error_payload(status_code, payload):
+    if not isinstance(payload, dict):
+        return {"error": "Error inesperado del servidor"}
+
+    if "error" in payload:
+        return payload
+
+    # DRF/SimpleJWT suele responder con "detail" en errores de autenticacion.
+    detail = payload.get("detail")
+    if status_code == 401 and detail:
+        return {"error": "Sesion no valida o caducada. Inicia sesion de nuevo."}
+
+    if detail:
+        return {"error": str(detail)}
+
+    return payload
+
 def login(username, password):
     try:
         r = requests.post(f"{BASE_URL}/login/", json={
@@ -45,7 +63,8 @@ def obtener_pacientes_clinica(clinic_id, token=None):
             headers=headers,
             timeout=5,
         )
-        return r.status_code, r.json()
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
     except requests.exceptions.RequestException as exc:
         return _network_error_response(exc)
         
@@ -64,6 +83,7 @@ def singin_paciente(username, dni, email, first_name, last_name, birth_date, tok
             "last_name": last_name,
             "birth_date": birth_date,
         }, headers=headers, timeout=10)
-        return r.status_code, r.json()
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
     except requests.exceptions.RequestException as exc:
         return _network_error_response(exc)
