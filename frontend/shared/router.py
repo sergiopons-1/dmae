@@ -135,7 +135,9 @@ class Router(QMainWindow):
     def show_registrar_paciente(self):
         self.stack.setCurrentWidget(self.registrar_paciente)
 
-    def show_generar_codigo(self):
+    def show_generar_codigo(self, codigo: str = ""):
+        if hasattr(self.generar_codigo, "set_codigo"):
+            self.generar_codigo.set_codigo(codigo)
         self.stack.setCurrentWidget(self.generar_codigo)
     
     def show_progreso_individual(self, paciente=None):

@@ -49,3 +49,20 @@ def obtener_pacientes_clinica(clinic_id, token=None):
     except requests.exceptions.RequestException as exc:
         return _network_error_response(exc)
         
+
+def singin_paciente(dni, email, first_name, last_name, birth_date, token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.post(f"{BASE_URL}/registro-paciente/", json={
+            "dni": dni,
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
+            "birth_date": birth_date,
+        }, headers=headers, timeout=10)
+        return r.status_code, r.json()
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
