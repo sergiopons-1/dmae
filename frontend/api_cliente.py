@@ -13,6 +13,9 @@ def _network_error_response(exc):
 
 
 def _normalize_error_payload(status_code, payload):
+    if status_code is not None and 200 <= status_code < 300:
+        return payload
+
     if not isinstance(payload, dict):
         return {"error": "Error inesperado del servidor"}
 
@@ -83,6 +86,23 @@ def singin_paciente(username, dni, email, first_name, last_name, birth_date, tok
             "last_name": last_name,
             "birth_date": birth_date,
         }, headers=headers, timeout=10)
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
+
+
+def obtener_progreso_individual(paciente_id, token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.get(
+            f"{BASE_URL_API}/pacientes/{paciente_id}/progreso_individual/",
+            headers=headers,
+            timeout=8,
+        )
         payload = _normalize_error_payload(r.status_code, r.json())
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:

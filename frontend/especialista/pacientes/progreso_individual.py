@@ -2,6 +2,7 @@ from shared.widgets.especialista.sidebar import Sidebar
 from shared.widgets.text import TextoInicio
 from shared.widgets.buttons import PrimaryButton
 from shared.widgets.tabla import TablaPacientes
+from api_cliente import obtener_progreso_individual
 from PyQt6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QWidget, QStackedWidget, QPushButton, QButtonGroup
 )
@@ -16,25 +17,9 @@ class ProgresoIndividual(QWidget):
         self.router = router
         self.nombre_especialista = nombre
         self._nombre_paciente = nombre
+        self._paciente_id = None
         self._datos_progreso = []
-        self._notas_por_paciente = {
-            "ANTONIO RODRIGUEZ DOMINGUEZ": [
-                {"Numero de nota": "7", "Descripcion": "Mejora en seguimiento visual horizontal.", "Fecha de emision": "2026-03-05"},
-                {"Numero de nota": "6", "Descripcion": "Reduce tiempo de reaccion en tareas de fijacion.", "Fecha de emision": "2026-02-26"},
-                {"Numero de nota": "5", "Descripcion": "Mantener ejercicios de precision 3 veces por semana.", "Fecha de emision": "2026-02-14"},
-                {"Numero de nota": "4", "Descripcion": "Sin molestias reportadas tras la sesion.", "Fecha de emision": "2026-02-02"},
-            ],
-            "MARTA LOPEZ GARCIA": [
-                {"Numero de nota": "4", "Descripcion": "Buena adherencia al plan semanal.", "Fecha de emision": "2026-03-04"},
-                {"Numero de nota": "3", "Descripcion": "Aumento progresivo en puntuacion general.", "Fecha de emision": "2026-02-20"},
-                {"Numero de nota": "2", "Descripcion": "Revisar fatiga ocular en sesiones largas.", "Fecha de emision": "2026-02-09"},
-            ],
-            "LUCIA FERNANDEZ MORA": [
-                {"Numero de nota": "9", "Descripcion": "Presenta estabilidad en movimientos sacadicos.", "Fecha de emision": "2026-03-06"},
-                {"Numero de nota": "8", "Descripcion": "Completa ejercicios sin incidencias.", "Fecha de emision": "2026-02-27"},
-                {"Numero de nota": "7", "Descripcion": "Proponer incremento de dificultad en siguiente ciclo.", "Fecha de emision": "2026-02-16"},
-            ],
-        }
+        self._notas = []
 
         main = QHBoxLayout(self)
         main.setContentsMargins(0, 0, 0, 0)
@@ -120,7 +105,7 @@ class ProgresoIndividual(QWidget):
         vista_notas_layout.setContentsMargins(0, 0, 0, 18)
         vista_notas_layout.setSpacing(16)
 
-        self.boton = PrimaryButton(text="Añadir nota", tamano=20, accion=self.anadir_nota)
+        self.boton = PrimaryButton(text="Añadir nota", tamano=16, accion=self.anadir_nota)
         vista_notas_layout.addWidget(self.boton, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.tabla_notas = TablaPacientes(columnas=3, headers=["Número de nota", "Descripción", "Fecha de emisión"])
@@ -138,8 +123,7 @@ class ProgresoIndividual(QWidget):
 
         main.addWidget(content, stretch=1)
 
-        # Cargar datos de ejemplo
-        self._cargar_datos_ejemplo()
+        self._actualizar_tabla()
         self._actualizar_notas_tabla()
 
     def set_nombre_especialista(self, nombre: str):
@@ -147,18 +131,6 @@ class ProgresoIndividual(QWidget):
         self.sidebar.set_nombre(self.nombre_especialista)
 
     # ── Datos ─────────────────────────────────────────────────
-    def _cargar_datos_ejemplo(self):
-        """Sustituye este método por la llamada real a la API Django."""
-        self._datos_progreso = [
-            {"Número": "1", "Fecha inicio": "2024-01-01", "Fecha fin": "2023-01-31", "Estado": "Completado", "Puntuación": 8.5},
-            {"Número": "2", "Fecha inicio": "2025-02-01", "Fecha fin": "2023-02-28", "Estado": "En curso", "Puntuación": 7.0},
-            {"Número": "3", "Fecha inicio": "2020-03-01", "Fecha fin": "2023-03-31", "Estado": "Pendiente", "Puntuación": 6.5},
-            {"Número": "4", "Fecha inicio": "2021-04-01", "Fecha fin": "2023-04-30", "Estado": "Completado", "Puntuación": 8.1},
-            {"Número": "5", "Fecha inicio": "2026-01-01", "Fecha fin": "2023-05-31", "Estado": "Completado", "Puntuación": 8.7},
-            {"Número": "6", "Fecha inicio": "2019-06-01", "Fecha fin": "2023-06-30", "Estado": "En curso", "Puntuación": 7.8},
-        ]
-        self._actualizar_tabla()
-
     def cargar_datos(self, datos: list):
         """
         Método público para cargar datos desde la API.
@@ -169,53 +141,70 @@ class ProgresoIndividual(QWidget):
 
     # ── Tabla ─────────────────────────────────────────────────
     def _actualizar_tabla(self):
-        datos_ordenados = sorted(
-            self._datos_progreso,
-            key=lambda item: item.get("Fecha inicio", ""),
-        )
-        self.tabla_progreso.set_datos(datos_ordenados)
+        if self._datos_progreso:
+            datos_ordenados = sorted(
+                self._datos_progreso,
+                key=lambda item: item.get("Fecha inicio", ""),
+            )
+            self.tabla_progreso.set_datos(datos_ordenados)
+            return
+
+        self.tabla_progreso.set_datos([
+            {
+                "Número": "-",
+                "Fecha inicio": "-",
+                "Fecha fin": "-",
+                "Estado": "Sin rehabilitaciones registradas",
+                "Puntuación": "-",
+            }
+        ])
 
     # ── Acción botón ──────────────────────────────────────────
     def anadir_nota(self):
         self.router.show_publicar_nota_paciente()
 
     def set_paciente(self, paciente: dict):
+        self._paciente_id = paciente.get("id")
         nombre = paciente.get("nombre", "")
         apellidos = paciente.get("apellidos", "")
         nombre_completo = f"{nombre} {apellidos}".upper().strip()
         self._nombre_paciente = nombre_completo or "PACIENTE"
-        self._actualizar_titulo_segun_vista()
+        self._cambiar_vista("progreso")
+        self._cargar_datos_reales()
         self._actualizar_notas_tabla()
 
     def _actualizar_notas_tabla(self):
-        notas = self._notas_por_paciente.get(self._nombre_paciente, [])
+        if self._notas:
+            self.tabla_notas.set_datos(self._notas)
+            return
 
-        if notas:
-            ultimas_tres = sorted(
-                notas,
-                key=lambda n: n.get("Fecha de emisión", ""),
-                reverse=True,
-            )[:3]
+        self.tabla_notas.set_datos([
+            {
+                "Número de nota": "-",
+                "Descripción": "Sin notas registradas aún.",
+                "Fecha de emisión": "-",
+            }
+        ])
+
+    def _cargar_datos_reales(self):
+        token = getattr(self.router, "auth_token", None)
+        if not self._paciente_id or not token:
+            self._datos_progreso = []
+            self._notas = []
+            self._actualizar_tabla()
+            return
+
+        status_code, data = obtener_progreso_individual(self._paciente_id, token)
+        if status_code == 200 and isinstance(data, dict):
+            rehabilitaciones = data.get("rehabilitaciones", [])
+            notas = data.get("notas", [])
+            self._datos_progreso = rehabilitaciones if isinstance(rehabilitaciones, list) else []
+            self._notas = notas if isinstance(notas, list) else []
         else:
-            ultimas_tres = [
-                {
-                    "Número de nota": "-",
-                    "Descripción": "Sin notas registradas aun.",
-                    "Fecha de emisión": "-",
-                },
-                {
-                    "Número de nota": "-",
-                    "Descripción": "Sin notas registradas aun.",
-                    "Fecha de emisión": "-",
-                },
-                {
-                    "Número de nota": "-",
-                    "Descripción": "Sin notas registradas aun.",
-                    "Fecha de emisión": "-",
-                },
-            ]
+            self._datos_progreso = []
+            self._notas = []
 
-        self.tabla_notas.set_datos(ultimas_tres)
+        self._actualizar_tabla()
 
     def _cambiar_vista(self, modo: str):
         if modo == "notas":

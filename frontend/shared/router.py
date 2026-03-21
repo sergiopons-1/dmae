@@ -6,13 +6,13 @@ from auth.initial_window import InitialWindow
 from auth.inicio_sesion import IniciarSesion
 from auth.registro import Registro
 from especialista.inicio_especialista import InicioEspecialista
-from especialista.perfil_especialista import PerfilEspecialista
-from especialista.cambio_contraseña_especialista import CambiarContraseña
-from especialista.mis_pacientes import PacientesEspecialista
-from especialista.registrar_paciente import RegistrarPaciente
-from especialista.generacion_codigo import GenerarCodigoPaciente
-from especialista.progreso_individual import ProgresoIndividual
-from especialista.escribir_notas import PublicarNota
+from especialista.perfil.perfil_especialista import PerfilEspecialista
+from especialista.perfil.cambio_contraseña_especialista import CambiarContraseña
+from especialista.pacientes.mis_pacientes import PacientesEspecialista
+from especialista.pacientes.registrar_paciente import RegistrarPaciente
+from especialista.pacientes.generacion_codigo import GenerarCodigoPaciente
+from especialista.pacientes.progreso_individual import ProgresoIndividual
+from especialista.pacientes.escribir_notas import PublicarNota
 
 
 
