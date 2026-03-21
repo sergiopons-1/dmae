@@ -1,4 +1,5 @@
 from datetime import datetime
+import re
 
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QDialog)
 from PyQt6.QtCore import Qt
@@ -7,6 +8,8 @@ from shared.widgets.buttons import PrimaryButton
 from shared.widgets.layout import CenterLayout
 from shared.widgets.especialista.sidebar import Sidebar
 from shared.widgets.text import TextoInicio, FormField
+
+USERNAME_RE = re.compile(r'^[\w.@+-]+$')
 
 class RegistrarPaciente(QDialog):
     def __init__(self, router, nombre="Carlos Mateo"):
@@ -27,6 +30,7 @@ class RegistrarPaciente(QDialog):
         center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.label = TextoInicio(label="Nuevo paciente", tamano=22, negrita=True, upper=True)
+        self.username = FormField(label="Nombre de usuario:", placeholder="usuario_paciente", tamano=15)
         self.DNI = FormField(label="DNI:", placeholder="12345678", tamano=15)
         self.nombre = FormField(label="Nombre:", placeholder="Nombre", tamano=15)
         self.apellidos = FormField(label="Apellidos:", placeholder="Apellidos", tamano=15)
@@ -38,6 +42,7 @@ class RegistrarPaciente(QDialog):
         
 
         center_layout.addWidget(self.label)
+        center_layout.addWidget(self.username)
         center_layout.addWidget(self.DNI)
         center_layout.addWidget(self.nombre)
         center_layout.addWidget(self.apellidos)
@@ -56,6 +61,7 @@ class RegistrarPaciente(QDialog):
         self.sidebar.set_nombre(self.nombre_especialista)
 
     def generar_codigo(self):
+        username = self.username.text().strip()
         dni = self.DNI.text().strip()
         first_name = self.nombre.text().strip()
         last_name = self.apellidos.text().strip()
@@ -64,8 +70,18 @@ class RegistrarPaciente(QDialog):
 
         self.label_error.setVisible(False)
 
-        if not all([dni, first_name, last_name, birth_date, email]):
+        if not all([username, dni, first_name, last_name, birth_date, email]):
             self.label_error.setText("Todos los campos son obligatorios")
+            self.label_error.setVisible(True)
+            return
+
+        if len(username) > 150:
+            self.label_error.setText("El nombre de usuario no puede superar 150 caracteres")
+            self.label_error.setVisible(True)
+            return
+
+        if not USERNAME_RE.match(username):
+            self.label_error.setText("Usuario: solo letras, dígitos y @/./+/-/_")
             self.label_error.setVisible(True)
             return
 
@@ -83,6 +99,7 @@ class RegistrarPaciente(QDialog):
 
         token = getattr(self.router, "auth_token", None)
         status_code, data = singin_paciente(
+            username=username,
             dni=dni,
             email=email,
             first_name=first_name,
@@ -94,6 +111,7 @@ class RegistrarPaciente(QDialog):
         if status_code == 201:
             codigo = data.get("codigo", "")
             self.router.show_generar_codigo(codigo)
+            self.username.input.clear()
             self.DNI.input.clear()
             self.nombre.input.clear()
             self.apellidos.input.clear()

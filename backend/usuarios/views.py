@@ -137,35 +137,35 @@ def _generar_codigo(longitud: int = 7) -> str:
     return ''.join(secrets.choice(caracteres) for _ in range(longitud))
 
 
-def _build_patient_username(dni: str) -> str:
-    base = f'pac_{dni}'
-    username = base
-    index = 1
-
-    while Usuario.objects.filter(username=username).exists():
-        username = f'{base}_{index}'
-        index += 1
-
-    return username
-
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def registro_paciente(request):
+    username = (request.data.get('username') or '').strip()
     dni = (request.data.get('dni') or '').strip()
     email = (request.data.get('email') or '').strip()
     first_name = (request.data.get('first_name') or '').strip()
     last_name = (request.data.get('last_name') or '').strip()
     birth_date = (request.data.get('birth_date') or '').strip()
 
-    if not all([dni, email, first_name, last_name, birth_date]):
+    if not all([username, dni, email, first_name, last_name, birth_date]):
         return Response({'error': 'Todos los campos son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
+    elif len(username) > 150:
+        return Response({'error': 'El nombre de usuario no puede superar 150 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
     elif len(first_name) > 150:
         return Response({'error': 'El nombre no puede superar 150 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
     elif len(last_name) > 150:
         return Response({'error': 'Los apellidos no pueden superar 150 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
     elif len(email) > 254:
         return Response({'error': 'El correo electrónico no puede superar 254 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
+
+    username_validator = UnicodeUsernameValidator()
+    try:
+        username_validator(username)
+    except ValidationError:
+        return Response(
+            {'error': 'El nombre de usuario solo puede contener letras, dígitos y @/./+/-/_'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     if not dni.isdigit() or len(dni) != 8:
         return Response({'error': 'El DNI debe contener exactamente 8 dígitos'}, status=status.HTTP_400_BAD_REQUEST)
@@ -188,11 +188,12 @@ def registro_paciente(request):
 
     if Paciente.objects.filter(dni=dni).exists():
         return Response({'error': 'El DNI ya está en uso'}, status=status.HTTP_400_BAD_REQUEST)
+    elif Usuario.objects.filter(username=username).exists():
+        return Response({'error': 'El nombre de usuario ya está en uso'}, status=status.HTTP_400_BAD_REQUEST)
     elif Usuario.objects.filter(email__iexact=email).exists():
         return Response({'error': 'El correo electrónico ya está en uso'}, status=status.HTTP_400_BAD_REQUEST)
 
     codigo = _generar_codigo()
-    username = _build_patient_username(dni)
 
     with transaction.atomic():
         user = Usuario.objects.create_user(
