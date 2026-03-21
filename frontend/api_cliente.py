@@ -3,15 +3,23 @@ import requests
 BASE_URL = "http://127.0.0.1:8000/api/usuarios"
 BASE_URL_API = "http://127.0.0.1:8000/api"
 
+
+def _network_error_response(exc):
+    if isinstance(exc, requests.exceptions.Timeout):
+        return None, {"error": "El servidor tardó demasiado en responder"}
+    if isinstance(exc, requests.exceptions.ConnectionError):
+        return None, {"error": "No se puede conectar al servidor"}
+    return None, {"error": "Error de red al comunicarse con el servidor"}
+
 def login(username, password):
     try:
         r = requests.post(f"{BASE_URL}/login/", json={
             "username": username,
             "password": password
-        }, timeout=5)
+        }, timeout=10)
         return r.status_code, r.json()
-    except requests.exceptions.ConnectionError:
-        return None, {"error": "No se puede conectar al servidor"}
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
 
 def singin(username, password, email, first_name, last_name):
     try:
@@ -19,10 +27,10 @@ def singin(username, password, email, first_name, last_name):
             "username": username, "password": password,
             "email": email, "first_name": first_name,
             "last_name": last_name
-        }, timeout=5)
+        }, timeout=10)
         return r.status_code, r.json()
-    except requests.exceptions.ConnectionError:
-        return None, {"error": "No se puede conectar al servidor"}
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
 
 
 def obtener_pacientes_clinica(clinic_id, token=None):
@@ -38,6 +46,6 @@ def obtener_pacientes_clinica(clinic_id, token=None):
             timeout=5,
         )
         return r.status_code, r.json()
-    except requests.exceptions.ConnectionError:
-        return None, {"error": "No se puede conectar al servidor"}
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
         

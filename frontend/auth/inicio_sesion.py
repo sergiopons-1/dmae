@@ -57,7 +57,9 @@ class IniciarSesion(QDialog, BeigeBg):
         self.router.show_specialist_registration()
         self.nombre_usuario.input.clear()
         self.contraseña.input.clear()
-    
+        self.error_username.setVisible(False)
+        self.error_contrasena.setVisible(False)
+        
     def inicio_sesion(self):
         username = self.nombre_usuario.text()
         password = self.contraseña.text()

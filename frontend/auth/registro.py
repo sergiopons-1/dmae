@@ -153,3 +153,11 @@ class Registro(QDialog, BeigeBg):
 
     def inicio_sesion(self):
         self.router.show_specialist_login()
+        self.nombre_usuario.input.clear()
+        self.nombre.input.clear()
+        self.apellidos.input.clear()
+        self.correo.input.clear()
+        self.contraseña.input.clear()
+        self.error_username.setVisible(False)
+        self.error_correo.setVisible(False)
+        self.label_error.setVisible(False)

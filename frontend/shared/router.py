@@ -65,7 +65,7 @@ class Router(QMainWindow):
         self.stack.addWidget(self.publicar_nota_paciente)
 
         # Pantalla mostrada al ejecutar el programa
-        self.stack.setCurrentWidget(self.iniciar_sesion)
+        self.stack.setCurrentWidget(self.inicio)
 
     def _sync_specialist_name(self):
         vistas = [
@@ -91,7 +91,7 @@ class Router(QMainWindow):
 
     def set_specialist_session(self, token: str, nombre: str, username: str = "", email: str = "", clinic_id=None):
         self.auth_token = token
-        self.especialista_nombre = (nombre or "Especialista").strip() or "Especialista"
+        self.especialista_nombre = (nombre or "").strip()
         self.especialista_username = username or ""
         self.especialista_email = email or ""
         self.clinic_id = clinic_id
@@ -99,7 +99,7 @@ class Router(QMainWindow):
 
     def clear_specialist_session(self):
         self.auth_token = None
-        self.especialista_nombre = "Especialista"
+        self.especialista_nombre = ""
         self.especialista_username = ""
         self.especialista_email = ""
         self.clinic_id = None
