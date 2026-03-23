@@ -87,3 +87,49 @@ class PacienteViewSet(viewsets.ModelViewSet):
                 'notas': notas,
             }
         )
+
+    @action(detail=True, methods=['post'])
+    def crear_nota(self, request, pk=None):
+        paciente = Paciente.objects.filter(pk=pk).select_related('usuario').first()
+        if paciente is None:
+            return Response({'error': 'Paciente no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user.rol != 'especialista':
+            return Response({'error': 'Solo especialistas pueden crear notas'}, status=status.HTTP_403_FORBIDDEN)
+
+        if request.user.clinica_id != paciente.usuario.clinica_id:
+            return Response({'error': 'No autorizado para este paciente'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Obtener o crear el progreso del paciente
+        progreso, _ = Progreso.objects.get_or_create(paciente=paciente.usuario)
+
+        # Obtener el contenido de la nota desde el request
+        contenido = str(request.data.get('contenido', '')).strip()
+        if not contenido:
+            return Response(
+                {'error': 'El contenido de la nota no puede estar vacío'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(contenido) > 500:
+            return Response(
+                {'error': 'El contenido de la nota no puede superar 500 caracteres'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Crear la nota
+        nota = Notas.objects.create(
+            progreso=progreso,
+            especialista=request.user,
+            contenido=contenido
+        )
+
+        return Response(
+            {
+                'id': nota.idNota,
+                'contenido': nota.contenido,
+                'fecha': nota.fechaNota.isoformat(),
+                'message': 'Nota creada correctamente'
+            },
+            status=status.HTTP_201_CREATED
+        )

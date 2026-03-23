@@ -92,6 +92,24 @@ def singin_paciente(username, dni, email, first_name, last_name, birth_date, tok
         return _network_error_response(exc)
 
 
+def cambiar_contrasena_especialista(password, token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.post(
+            f"{BASE_URL}/cambiar-contrasena/",
+            json={"password": password},
+            headers=headers,
+            timeout=10,
+        )
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
+
+
 def obtener_progreso_individual(paciente_id, token=None):
     try:
         headers = {}
@@ -102,6 +120,24 @@ def obtener_progreso_individual(paciente_id, token=None):
             f"{BASE_URL_API}/pacientes/{paciente_id}/progreso_individual/",
             headers=headers,
             timeout=8,
+        )
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
+
+
+def crear_nota(paciente_id, contenido, token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.post(
+            f"{BASE_URL_API}/pacientes/{paciente_id}/crear_nota/",
+            json={"contenido": contenido},
+            headers=headers,
+            timeout=10,
         )
         payload = _normalize_error_payload(r.status_code, r.json())
         return r.status_code, payload

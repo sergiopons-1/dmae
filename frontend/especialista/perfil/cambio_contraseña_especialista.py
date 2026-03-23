@@ -1,12 +1,11 @@
-from PyQt6.QtWidgets import (QVBoxLayout, QLabel, QDialog)
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QPixmap
+from PyQt6.QtWidgets import QDialog
+from PyQt6.QtCore import Qt
 from shared.widgets.buttons import PrimaryButton
 from shared.widgets.fondo import BeigeBg
-from especialista.widgets.card import Card
 from shared.widgets.text import FormField, TextoInicio
 from shared.widgets.imagenes import Imagenes
 from shared.widgets.layout import MainLayout, CenterLayout
+from api_cliente import cambiar_contrasena_especialista
 
 
 PRIMARY = "#0E4C66"
@@ -34,12 +33,15 @@ class CambiarContraseña(QDialog, BeigeBg):
         self.texto2 = TextoInicio(label="Cambia tu contraseña", tamano=24, upper=True, negrita=True)
         self.contraseña = FormField(label="Contraseña", tamano=14, password=True)
         self.repetir_contraseña = FormField(label="Repetir contraseña", tamano=14, password=True)
+        self.label_error = TextoInicio(label="", tamano=12, error=True)
+        self.label_error.setVisible(False)
         self.cambiar_contrasena = PrimaryButton(text="Confirmar contraseña", tamano=15, accion = self.cambio_contrasena)
         
         center_layout.addWidget(self.texto1)
         center_layout.addWidget(self.texto2)
         center_layout.addWidget(self.contraseña)
         center_layout.addWidget(self.repetir_contraseña)
+        center_layout.addWidget(self.label_error)
         center_layout.addWidget(self.cambiar_contrasena)
 
         main_layout.addLayout(center_layout)
@@ -49,4 +51,47 @@ class CambiarContraseña(QDialog, BeigeBg):
         self.texto1.setText(f"Hola {self.nombre_especialista}")
 
     def cambio_contrasena(self):
-        self.router.show_specialist_login()
+        nueva = self.contraseña.text().strip()
+        repetida = self.repetir_contraseña.text().strip()
+
+        self.label_error.setVisible(False)
+        self.label_ok.setVisible(False)
+
+        if not nueva or not repetida:
+            self.label_error.setText("Debes completar ambos campos")
+            self.label_error.setVisible(True)
+            return
+
+        if nueva != repetida:
+            self.label_error.setText("Las contraseñas no coinciden")
+            self.label_error.setVisible(True)
+            return
+
+        token = getattr(self.router, "auth_token", None)
+        if not token:
+            self.label_error.setText("Tu sesión no es valida. Inicia sesión de nuevo")
+            self.label_error.setVisible(True)
+            return
+
+        status_code, data = cambiar_contrasena_especialista(password=nueva, token=token)
+
+        if status_code == 200:
+            self.contraseña.input.clear()
+            self.repetir_contraseña.input.clear()
+            self.label_ok.setText(data.get("message", "Contraseña actualizada correctamente"))
+            self.label_error.setVisible(False)
+            self.router.show_specialist_login()
+            return
+
+        if status_code in (400, 401, 403):
+            self.label_error.setText(data.get("error", "No se pudo cambiar la contraseña"))
+            self.label_error.setVisible(True)
+            return
+
+        if status_code is None:
+            self.label_error.setText(data.get("error", "No se pudo conectar al servidor"))
+            self.label_error.setVisible(True)
+            return
+
+        self.label_error.setText("Error inesperado, intenta de nuevo")
+        self.label_error.setVisible(True)

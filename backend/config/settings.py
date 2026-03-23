@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -90,6 +91,13 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ]
+}
+
+SIMPLE_JWT = {
+    # Tiempo de validez del access token usado por el frontend.
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    # Duracion del refresh token (por si en el futuro se implementa renovacion automatica).
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
 
 # Password validation

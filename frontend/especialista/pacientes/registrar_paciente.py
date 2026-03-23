@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 import re
 
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QDialog)
@@ -94,6 +94,11 @@ class RegistrarPaciente(QDialog):
             fecha = datetime.strptime(birth_date, "%d/%m/%Y").date()
         except ValueError:
             self.label_error.setText("La fecha debe tener formato DD/MM/AAAA")
+            self.label_error.setVisible(True)
+            return
+
+        if fecha < date(1900, 1, 1) or fecha > date.today():
+            self.label_error.setText("La fecha debe estar entre 01/01/1900 y hoy")
             self.label_error.setVisible(True)
             return
 

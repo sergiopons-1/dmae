@@ -1,6 +1,6 @@
 import secrets
 import string
-from datetime import datetime
+from datetime import datetime, date
 
 from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
@@ -120,6 +120,28 @@ def nombre(request, name):
     return Response({'error': 'Especialista no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def cambiar_contrasena(request):
+    if request.user.rol != 'especialista':
+        return Response({'error': 'Solo un especialista puede cambiar su contraseña'}, status=status.HTTP_403_FORBIDDEN)
+
+    password = (request.data.get('password') or '').strip()
+
+    if not password:
+        return Response({'error': 'La contraseña es obligatoria'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        validate_password(password, user=request.user)
+    except ValidationError as exc:
+        return Response({'error': exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST)
+
+    request.user.set_password(password)
+    request.user.save(update_fields=['password'])
+
+    return Response({'message': 'Contraseña actualizada correctamente'}, status=status.HTTP_200_OK)
+
+
 
 ########################################### PACIENTE ####################################################
 
@@ -179,6 +201,12 @@ def registro_paciente(request):
     if fecha_nacimiento is None:
         return Response({'error': 'La fecha de nacimiento no es válida. Usa DD/MM/AAAA'}, status=status.HTTP_400_BAD_REQUEST)
 
+    if fecha_nacimiento < date(1900, 1, 1) or fecha_nacimiento > date.today():
+        return Response(
+            {'error': 'La fecha de nacimiento debe estar entre 01/01/1900 y hoy'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     if request.user.rol != 'especialista':
         return Response({'error': 'Solo un especialista puede registrar pacientes'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -206,13 +234,19 @@ def registro_paciente(request):
             clinica=request.user.clinica,
         )
 
-        Paciente.objects.create(
+        paciente = Paciente(
             usuario=user,
             especialista=especialista,
             dni=dni,
             fechaNacimiento=fecha_nacimiento,
             codigoInicioSesion=codigo,
         )
+        try:
+            paciente.full_clean()
+        except ValidationError as exc:
+            mensaje = exc.messages[0] if exc.messages else 'Los datos del paciente no son válidos'
+            return Response({'error': mensaje}, status=status.HTTP_400_BAD_REQUEST)
+        paciente.save()
 
     user.last_login = timezone.now()
     user.save(update_fields=['last_login'])

@@ -7,9 +7,11 @@ from PyQt6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QWidget, QStackedWidget, QPushButton, QButtonGroup
 )
 from PyQt6.QtCore import Qt
+from datetime import datetime
 
 PRIMARY    = "#0E4C66"
 BG_COLOR   = "#FFF7E7"
+MAX_DESC_NOTA = 250
 
 class ProgresoIndividual(QWidget):
     def __init__(self, router, nombre="Carlos Mateo"):
@@ -108,7 +110,7 @@ class ProgresoIndividual(QWidget):
         self.boton = PrimaryButton(text="Añadir nota", tamano=16, accion=self.anadir_nota)
         vista_notas_layout.addWidget(self.boton, alignment=Qt.AlignmentFlag.AlignHCenter)
 
-        self.tabla_notas = TablaPacientes(columnas=3, headers=["Número de nota", "Descripción", "Fecha de emisión"])
+        self.tabla_notas = TablaPacientes(columnas=3, min_height=200, headers=["Número de nota", "Descripción", "Fecha de emisión"])
         vista_notas_layout.addWidget(self.tabla_notas)
         vista_notas_layout.addSpacing(10)
 
@@ -175,7 +177,16 @@ class ProgresoIndividual(QWidget):
 
     def _actualizar_notas_tabla(self):
         if self._notas:
-            self.tabla_notas.set_datos(self._notas)
+            notas_mostradas = []
+            for nota in self._notas:
+                nota_formateada = dict(nota)
+                descripcion = str(nota_formateada.get("Descripción", ""))
+                if len(descripcion) > MAX_DESC_NOTA:
+                    descripcion = descripcion[:MAX_DESC_NOTA]
+                nota_formateada["Descripción"] = descripcion
+                notas_mostradas.append(nota_formateada)
+
+            self.tabla_notas.set_datos(notas_mostradas)
             return
 
         self.tabla_notas.set_datos([
@@ -185,6 +196,29 @@ class ProgresoIndividual(QWidget):
                 "Fecha de emisión": "-",
             }
         ])
+
+    def agregar_nota_local(self, contenido: str, fecha_iso: str | None = None):
+        fecha = "-"
+        if fecha_iso:
+            try:
+                fecha = datetime.fromisoformat(fecha_iso.replace("Z", "+00:00")).date().isoformat()
+            except ValueError:
+                fecha = datetime.now().date().isoformat()
+        else:
+            fecha = datetime.now().date().isoformat()
+
+        nueva_nota = {
+            "Número de nota": "1",
+            "Descripción": contenido,
+            "Fecha de emisión": fecha,
+        }
+
+        self._notas.insert(0, nueva_nota)
+
+        for indice, item in enumerate(self._notas, start=1):
+            item["Número de nota"] = str(indice)
+
+        self._actualizar_notas_tabla()
 
     def _cargar_datos_reales(self):
         token = getattr(self.router, "auth_token", None)

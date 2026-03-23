@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView,
     QLabel, QPushButton, QSizePolicy
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QEvent
+from PyQt6.QtCore import Qt, pyqtSignal, QEvent, QTimer
 from PyQt6.QtGui import QFont, QColor
 from shared.widgets.buttons import PaginationButton
 from shared.widgets.text import TextoInicio
@@ -18,7 +18,7 @@ BORDER = "#0E4C66"
 class TablaPacientes(QWidget):
     fila_clickada = pyqtSignal(dict)
 
-    def __init__(self, columnas: int=4, headers: list=["Nombre", "Apellidos", "Rehabilitaciones", "Especialista"]):
+    def __init__(self, columnas: int=4, min_height: int=400, headers: list=["Nombre", "Apellidos", "Rehabilitaciones", "Especialista"]):
         super().__init__()
 
         self._headers = headers[:columnas]
@@ -43,7 +43,8 @@ class TablaPacientes(QWidget):
         self.tabla.setAlternatingRowColors(False)
         self.tabla.setCursor(Qt.CursorShape.PointingHandCursor)
         self.tabla.setMouseTracking(True)
-        self.tabla.setMinimumHeight(400)
+        self.tabla.setWordWrap(True)
+        self.tabla.setMinimumHeight(min_height)
         self.tabla.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.tabla.cellClicked.connect(self._on_fila_click)
         self.tabla.cellEntered.connect(self._on_fila_hover)
@@ -111,6 +112,11 @@ class TablaPacientes(QWidget):
         super().resizeEvent(event)
         self._recalcular_filas_por_pagina()
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        # Espera al siguiente ciclo para que el layout termine y el viewport tenga alto real.
+        QTimer.singleShot(0, self._recalcular_filas_por_pagina)
+
     def _recalcular_filas_por_pagina(self):
         disponibles = self.tabla.viewport().height()
         nuevas_filas = max(1, disponibles // self._alto_fila)
@@ -139,6 +145,14 @@ class TablaPacientes(QWidget):
                 self.tabla.setItem(fila, col, item)
 
             self.tabla.setRowHeight(fila, self._alto_fila)
+
+        # Si existe columna de descripcion, ajusta filas al contenido para soportar multilinea
+        # tras redimensionar la ventana o la tabla.
+        if any(str(h).strip().lower() == "descripción" for h in self._headers):
+            self.tabla.resizeRowsToContents()
+            for fila in range(self.tabla.rowCount()):
+                if self.tabla.rowHeight(fila) < self._alto_fila:
+                    self.tabla.setRowHeight(fila, self._alto_fila)
 
         self._repintar_filas()
         self._actualizar_paginacion()

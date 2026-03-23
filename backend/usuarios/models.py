@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator, MinLengthValidator
-
+from django.core.validators import RegexValidator, MinLengthValidator, MinValueValidator, MaxValueValidator
+from datetime import date
 
 class Clinica(models.Model):
     idClinica = models.AutoField(primary_key=True)
@@ -62,7 +62,14 @@ class Paciente(models.Model):
         ],
         verbose_name="DNI"
     )
-    fechaNacimiento = models.DateField(null=True, blank=True)
+    fechaNacimiento = models.DateField(
+        null=True,
+        blank=True,
+        validators=[
+            MinValueValidator(date(1900, 1, 1)),
+            MaxValueValidator(date.today()),
+        ],
+    )
     codigoInicioSesion = models.CharField(max_length=100, unique=True, null=True, blank=True)
 
     class Meta:

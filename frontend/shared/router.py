@@ -146,4 +146,8 @@ class Router(QMainWindow):
         self.stack.setCurrentWidget(self.progreso_individual)
     
     def show_publicar_nota_paciente(self):
+        if hasattr(self.publicar_nota_paciente, "set_paciente_id"):
+            paciente_id = getattr(self.progreso_individual, "_paciente_id", None)
+            nombre_paciente = getattr(self.progreso_individual, "_nombre_paciente", "Paciente")
+            self.publicar_nota_paciente.set_paciente_id(paciente_id, nombre_paciente)
         self.stack.setCurrentWidget(self.publicar_nota_paciente)
