@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import (QDialog, QGridLayout, QWidget)
 from PyQt6.QtCore import Qt
 from shared.widgets.buttons import PrimaryButton
+from shared.widgets.banner import Banner
 from shared.widgets.fondo import BeigeBg
 from shared.widgets.text import FormField, TextoInicio
 from shared.widgets.imagenes import Imagenes
@@ -32,6 +33,7 @@ class IniciarSesion(QDialog, BeigeBg):
         center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.label = TextoInicio(label="Inicio sesión especialista", tamano=24, upper=True, negrita=True)
+        self.banner = Banner(self)
         self.nombre_usuario = FormField(label="Nombre de usuario", tamano=14)
         self.contraseña = FormField(label="Contraseña", tamano=14, password=True)
         self.error_username = TextoInicio(label="", tamano=12, error=True)
@@ -42,6 +44,7 @@ class IniciarSesion(QDialog, BeigeBg):
         self.texto = TextoInicio(label="¿No tienes cuenta?, Regístrate", tamano=16, accion=self.registro)
 
         center_layout.addWidget(self.label)
+        center_layout.addWidget(self.banner)
         center_layout.addWidget(self.nombre_usuario)
         center_layout.addWidget(self.error_username)
         center_layout.addWidget(self.contraseña)
@@ -57,12 +60,17 @@ class IniciarSesion(QDialog, BeigeBg):
         self.router.show_specialist_registration()
         self.nombre_usuario.input.clear()
         self.contraseña.input.clear()
+        self.banner.ocultar()
         self.error_username.setVisible(False)
         self.error_contrasena.setVisible(False)
+
+    def mostrar_banner_exito(self, mensaje: str, duracion_ms: int = 3000):
+        self.banner.mostrar(mensaje, tipo="success", duracion_ms=duracion_ms)
         
     def inicio_sesion(self):
         username = self.nombre_usuario.text()
         password = self.contraseña.text()
+        self.banner.ocultar()
         self.contraseña.input.clear()
 
         status_code, data = login(username, password)

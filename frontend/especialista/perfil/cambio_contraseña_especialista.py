@@ -55,7 +55,6 @@ class CambiarContraseña(QDialog, BeigeBg):
         repetida = self.repetir_contraseña.text().strip()
 
         self.label_error.setVisible(False)
-        self.label_ok.setVisible(False)
 
         if not nueva or not repetida:
             self.label_error.setText("Debes completar ambos campos")
@@ -78,9 +77,9 @@ class CambiarContraseña(QDialog, BeigeBg):
         if status_code == 200:
             self.contraseña.input.clear()
             self.repetir_contraseña.input.clear()
-            self.label_ok.setText(data.get("message", "Contraseña actualizada correctamente"))
-            self.label_error.setVisible(False)
             self.router.show_specialist_login()
+            if hasattr(self.router.iniciar_sesion, "mostrar_banner_exito"):
+                self.router.iniciar_sesion.mostrar_banner_exito("contraseña cambiada correctamente", duracion_ms=3000)
             return
 
         if status_code in (400, 401, 403):

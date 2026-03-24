@@ -2,6 +2,7 @@ from shared.widgets.especialista.sidebar import Sidebar
 from shared.widgets.text import TextoInicio
 from shared.widgets.buttons import PrimaryButton
 from shared.widgets.tabla import TablaPacientes
+from shared.widgets.banner import Banner
 from api_cliente import obtener_progreso_individual
 from PyQt6.QtWidgets import (
     QHBoxLayout, QVBoxLayout, QWidget, QStackedWidget, QPushButton, QButtonGroup
@@ -39,6 +40,9 @@ class ProgresoIndividual(QWidget):
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(40, 30, 40, 20)
         content_layout.setSpacing(20)
+
+        self.banner_exito = Banner(self)
+        content_layout.addWidget(self.banner_exito)
 
         # Titulo
         self.titulo_progreso = TextoInicio(label="Progreso de " + nombre, tamano=22, negrita=True, upper=True)
@@ -219,6 +223,12 @@ class ProgresoIndividual(QWidget):
             item["Número de nota"] = str(indice)
 
         self._actualizar_notas_tabla()
+
+    def mostrar_banner_exito(self, mensaje: str, duracion_ms: int = 3000):
+        self.banner_exito.mostrar(mensaje, tipo="success", duracion_ms=duracion_ms)
+
+    def _ocultar_banner_exito(self):
+        self.banner_exito.ocultar()
 
     def _cargar_datos_reales(self):
         token = getattr(self.router, "auth_token", None)

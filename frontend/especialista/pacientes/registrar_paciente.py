@@ -121,6 +121,8 @@ class RegistrarPaciente(QDialog):
         if status_code == 201:
             codigo = data.get("codigo", "")
             self.router.show_generar_codigo(codigo)
+            if hasattr(self.router.generar_codigo, "mostrar_banner_exito"):
+                self.router.generar_codigo.mostrar_banner_exito("Paciente creado correctamente", duracion_ms=3000)
             self.username.input.clear()
             self.DNI.input.clear()
             self.nombre.input.clear()

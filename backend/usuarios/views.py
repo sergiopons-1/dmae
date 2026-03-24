@@ -210,10 +210,7 @@ def registro_paciente(request):
     if request.user.rol != 'especialista':
         return Response({'error': 'Solo un especialista puede registrar pacientes'}, status=status.HTTP_403_FORBIDDEN)
 
-    especialista = Especialista.objects.filter(usuario=request.user).first()
-    if especialista is None:
-        return Response({'error': 'El especialista no está registrado correctamente'}, status=status.HTTP_400_BAD_REQUEST)
-
+    
     if Paciente.objects.filter(dni=dni).exists():
         return Response({'error': 'El DNI ya está en uso'}, status=status.HTTP_400_BAD_REQUEST)
     elif Usuario.objects.filter(username=username).exists():

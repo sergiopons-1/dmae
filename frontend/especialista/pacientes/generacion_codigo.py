@@ -4,6 +4,7 @@ import string
 from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QDialog)
 from PyQt6.QtCore import Qt
 from shared.widgets.buttons import PrimaryButton
+from shared.widgets.banner import Banner
 from shared.widgets.layout import CenterLayout
 from shared.widgets.especialista.sidebar import Sidebar
 from shared.widgets.text import TextoInicio
@@ -27,6 +28,9 @@ class GenerarCodigoPaciente(QDialog):
         center_layout = CenterLayout(espacio=40)
         center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+        self.banner = Banner(self)
+        center_layout.addWidget(self.banner)
+
         self.label = TextoInicio(label="El código del paciente es:", tamano=35, negrita=True, upper=True)
         self.codigo = TextoInicio(label=self._codigo_actual, tamano=35, negrita=True, upper=True)
         self.cambiar_contrasena = PrimaryButton(text="VOLVER", tamano=15, accion=self.volver)
@@ -48,6 +52,9 @@ class GenerarCodigoPaciente(QDialog):
     def set_codigo(self, codigo: str):
         self._codigo_actual = (codigo or "").strip() or self._generar_codigo()
         self.codigo.setText(self._codigo_actual)
+
+    def mostrar_banner_exito(self, mensaje: str, duracion_ms: int = 3000):
+        self.banner.mostrar(mensaje, tipo="success", duracion_ms=duracion_ms)
 
     def _generar_codigo(self, longitud: int = 7) -> str:
         caracteres = string.ascii_uppercase + string.digits

@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QDialog, QVBoxLayout, QTextEdit, QMessageBox, QLabel)
+from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QDialog, QVBoxLayout, QTextEdit, QMessageBox)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QColor
 from shared.widgets.buttons import PrimaryButton
@@ -11,7 +11,7 @@ PRIMARY = "#0E4C66"
 BG_COLOR = "#FFF7E7"
 
 class PublicarNota(QDialog):
-    def __init__(self, router, nombre="Carlos Mateo"):
+    def __init__(self, router, nombre=""):
         super().__init__()
         self.router = router
         self.nombre_especialista = nombre
@@ -100,13 +100,14 @@ class PublicarNota(QDialog):
         status_code, response = crear_nota(self._paciente_id, contenido, token)
         
         if status_code == 201:
-            QMessageBox.information(self, "Éxito", "Nota publicada correctamente.")
             if hasattr(self.router.progreso_individual, "agregar_nota_local"):
                 self.router.progreso_individual.agregar_nota_local(
                     contenido=contenido,
                     fecha_iso=response.get("fecha") if isinstance(response, dict) else None,
                 )
             self.router.show_progreso_individual()
+            if hasattr(self.router.progreso_individual, "mostrar_banner_exito"):
+                self.router.progreso_individual.mostrar_banner_exito("Nota publicada correctamente", duracion_ms=3000)
         else:
             error_msg = response.get("error", "Error al publicar la nota")
             QMessageBox.critical(self, "Error", error_msg)
