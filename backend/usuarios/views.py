@@ -14,6 +14,7 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from usuarios.models import Usuario, Especialista, Paciente, Clinica
 
 ########################################### ESPECIALISTA ####################################################
@@ -41,6 +42,7 @@ def login(request):
     nombre_completo = user.get_full_name().strip() or user.username
     return Response({
         'token': str(refresh.access_token),
+        'refresh': str(refresh),
         'rol': user.rol,
         'nombre': nombre_completo,
         'email': user.email,
@@ -118,12 +120,29 @@ def registro(request):
     return Response(
         {
             'token': str(refresh.access_token),
+            'refresh': str(refresh),
             'nombre': nombre_completo,
             'email': user.email,
             'clinic_id': user.clinica_id,
         },
         status=status.HTTP_201_CREATED,
     )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    refresh_token = (request.data.get('refresh') or '').strip()
+    if not refresh_token:
+        return Response({'error': 'El refresh token es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+    except TokenError:
+        return Response({'error': 'Refresh token no válido o ya invalidado'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({'message': 'Sesión cerrada correctamente'}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])

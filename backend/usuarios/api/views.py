@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.db.models import Count
 from ..models import Paciente
 from juego.models import Progreso, Rehabilitacion, Notas
 from .serializer import PacienteSerializer, PacienteListSerializer
@@ -22,7 +23,9 @@ class PacienteViewSet(viewsets.ModelViewSet):
 
         pacientes = Paciente.objects.filter(
             usuario__clinica_id=clinic_id
-        ).select_related('usuario', 'especialista__usuario')
+        ).select_related('usuario', 'especialista__usuario').annotate(
+            rehabilitaciones_count=Count('usuario__progreso__rehabilitacion', distinct=True)
+        )
 
         serializer = PacienteListSerializer(pacientes, many=True)
         return Response(serializer.data)

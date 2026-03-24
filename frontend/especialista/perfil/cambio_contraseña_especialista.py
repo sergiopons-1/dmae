@@ -31,7 +31,7 @@ class CambiarContraseña(QDialog, BeigeBg):
 
         self.texto1 = TextoInicio(label="Hola nombre", tamano=24, upper=True, negrita=True)
         self.texto2 = TextoInicio(label="Cambia tu contraseña", tamano=24, upper=True, negrita=True)
-        self.contraseña = FormField(label="Contraseña", tamano=14, password=True)
+        self.contraseña = FormField(label="Nueva Contraseña", tamano=14, password=True)
         self.repetir_contraseña = FormField(label="Repetir contraseña", tamano=14, password=True)
         self.label_error = TextoInicio(label="", tamano=12, error=True)
         self.label_error.setVisible(False)

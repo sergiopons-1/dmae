@@ -13,6 +13,7 @@ from especialista.pacientes.registrar_paciente import RegistrarPaciente
 from especialista.pacientes.generacion_codigo import GenerarCodigoPaciente
 from especialista.pacientes.progreso_individual import ProgresoIndividual
 from especialista.pacientes.escribir_notas import PublicarNota
+from api_cliente import logout as logout_api
 
 
 
@@ -20,6 +21,7 @@ class Router(QMainWindow):
     def __init__(self):
         super().__init__()
         self.auth_token = None
+        self.refresh_token = None
         self.especialista_nombre = "Especialista"
         self.especialista_username = ""
         self.especialista_email = ""
@@ -89,8 +91,9 @@ class Router(QMainWindow):
                 email=self.especialista_email,
             )
 
-    def set_specialist_session(self, token: str, nombre: str, username: str = "", email: str = "", clinic_id=None):
+    def set_specialist_session(self, token: str, refresh_token: str = "", nombre: str = "", username: str = "", email: str = "", clinic_id=None):
         self.auth_token = token
+        self.refresh_token = refresh_token or ""
         self.especialista_nombre = (nombre or "").strip()
         self.especialista_username = username or ""
         self.especialista_email = email or ""
@@ -99,11 +102,17 @@ class Router(QMainWindow):
 
     def clear_specialist_session(self):
         self.auth_token = None
+        self.refresh_token = None
         self.especialista_nombre = ""
         self.especialista_username = ""
         self.especialista_email = ""
         self.clinic_id = None
         self._sync_specialist_name()
+
+    def logout_specialist_session(self):
+        if self.refresh_token:
+            logout_api(self.refresh_token, self.auth_token)
+        self.show_inicio()
 
 
     def show_inicio(self):

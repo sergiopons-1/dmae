@@ -78,6 +78,7 @@ class IniciarSesion(QDialog, BeigeBg):
         if status_code == 200:
             self.router.set_specialist_session(
                 token=data.get('token', ''),
+                refresh_token=data.get('refresh', ''),
                 nombre=data.get('nombre', ''),
                 username=username,
                 email=data.get('email', ''),

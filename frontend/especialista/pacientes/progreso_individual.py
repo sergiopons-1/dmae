@@ -13,6 +13,7 @@ from datetime import datetime
 PRIMARY    = "#0E4C66"
 BG_COLOR   = "#FFF7E7"
 MAX_DESC_NOTA = 250
+MAX_TITULO_PACIENTE = 30
 
 class ProgresoIndividual(QWidget):
     def __init__(self, router, nombre="Carlos Mateo"):
@@ -268,11 +269,20 @@ class ProgresoIndividual(QWidget):
 
         self._actualizar_titulo_segun_vista()
 
+    def _texto_truncado(self, texto: str, max_chars: int) -> str:
+        valor = (texto or "").strip()
+        if len(valor) <= max_chars:
+            return valor
+        return f"{valor[:max_chars - 1]}…"
+
     def _actualizar_titulo_segun_vista(self):
+        nombre_mostrado = self._texto_truncado(self._nombre_paciente, MAX_TITULO_PACIENTE)
         if self.panel_vistas.currentWidget() == self.vista_notas:
-            self.titulo_progreso.setText(f"NOTAS DE {self._nombre_paciente}")
+            self.titulo_progreso.setText(f"NOTAS DE {nombre_mostrado}")
         else:
-            self.titulo_progreso.setText(f"PROGRESO DE {self._nombre_paciente}")
+            self.titulo_progreso.setText(f"PROGRESO DE {nombre_mostrado}")
+
+        self.titulo_progreso.lbl.setToolTip(self._nombre_paciente)
 
     
 

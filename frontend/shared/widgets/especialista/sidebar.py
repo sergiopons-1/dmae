@@ -109,6 +109,10 @@ class Sidebar(QWidget):
         return btn
 
     def cerrar_sesion(self):
+        if self.router is not None and hasattr(self.router, "logout_specialist_session"):
+            self.router.logout_specialist_session()
+            return
+
         self.go_logout.emit()
         if self.router is not None and hasattr(self.router, "show_inicio"):
             self.router.show_inicio()

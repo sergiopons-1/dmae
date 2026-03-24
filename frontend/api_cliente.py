@@ -38,7 +38,26 @@ def login(username, password):
             "username": username,
             "password": password
         }, timeout=10)
-        return r.status_code, r.json()
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
+
+
+def logout(refresh_token, token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.post(
+            f"{BASE_URL}/logout/",
+            json={"refresh": refresh_token},
+            headers=headers,
+            timeout=10,
+        )
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
     except requests.exceptions.RequestException as exc:
         return _network_error_response(exc)
 
@@ -50,7 +69,8 @@ def singin(username, password, email, first_name, last_name, clinic_id):
             "last_name": last_name,
             "clinic_id": clinic_id,
         }, timeout=10)
-        return r.status_code, r.json()
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
     except requests.exceptions.RequestException as exc:
         return _network_error_response(exc)
 

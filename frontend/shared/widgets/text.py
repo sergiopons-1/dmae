@@ -7,7 +7,7 @@ PRIMARY = "#0E4C66"
 class TextoInicio(QWidget):
     clicked = pyqtSignal()
 
-    def __init__(self, label: str = "", tamano: int = 11, negrita: bool = False, error:bool = False, upper: bool = False, color: str = PRIMARY, accion=None, parent=None):
+    def __init__(self, label: str = "", tamano: int = 11, alin: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignCenter, negrita: bool = False, error:bool = False, upper: bool = False, color: str = PRIMARY, accion=None, parent=None):
         super().__init__(parent)
         if error:
             color="#FF0000"
@@ -22,8 +22,7 @@ class TextoInicio(QWidget):
         font.setBold(negrita)
         self.lbl.setFont(font)
         self.lbl.setStyleSheet(f"color: {color};")
-        self.lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
+        self.lbl.setAlignment(alin)
         layout.addWidget(self.lbl)
 
         if accion is not None:
@@ -48,17 +47,17 @@ class DatosPerfil(QWidget):
         
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignRight)
+        #layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignRight)
         layout.setSpacing(50)
         
-        lbl = TextoInicio(label, tamano=tamano)
+        lbl = TextoInicio(label, tamano=tamano, alin=Qt.AlignmentFlag.AlignLeft)
         lbl.setMinimumWidth(200)
         lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
         lbl.setStyleSheet(f"color: {PRIMARY};")
         #lbl.setAlignment(Qt.AlignmentFlag.AlignLeft)
         layout.addWidget(lbl)
 
-        self.dato = TextoInicio(label2, tamano=tamano)
+        self.dato = TextoInicio(label2, tamano=tamano, alin=Qt.AlignmentFlag.AlignLeft)
     
         self.dato.setMinimumHeight(34)
         self.dato.setFixedWidth(250)

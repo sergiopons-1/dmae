@@ -29,5 +29,11 @@ class PacienteListSerializer(serializers.ModelSerializer):
         return "Sin asignar"
 
     def get_rehabilitaciones(self, obj):
-        # Pendiente de conectar con sesiones reales.
-        return 0
+        if hasattr(obj, 'rehabilitaciones_count'):
+            return int(obj.rehabilitaciones_count or 0)
+
+        progreso = getattr(obj.usuario, 'progreso', None)
+        if progreso is None:
+            return 0
+
+        return progreso.rehabilitacion_set.count()

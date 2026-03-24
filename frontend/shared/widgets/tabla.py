@@ -78,7 +78,7 @@ class TablaPacientes(QWidget):
         # ── Paginación ───────────────────────────────────────
         pag_layout = QHBoxLayout()
         pag_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        pag_layout.setSpacing(10)
+        pag_layout.setSpacing(20)
 
         self.btn_anterior = PaginationButton("<", self._pagina_anterior)
 
