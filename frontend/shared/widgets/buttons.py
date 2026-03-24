@@ -81,3 +81,26 @@ class PaginationButton(QPushButton):
             QPushButton:hover {{ color: #1878A1; }}
             QPushButton:disabled {{ color: #C0C0C0; }}
         """
+
+
+class BackButton(QPushButton):
+    def __init__(self, text: str = "Volver", tamano: int = 14, accion=None, parent=None):
+        super().__init__(f"← {text}", parent)
+        self.setFixedHeight(40)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFont(QFont("Segoe UI", tamano, QFont.Weight.Bold))
+        self.setStyleSheet(f"""
+            QPushButton {{
+                background-color: transparent;
+                color: {PRIMARY};
+                border: none;
+                padding: 6px 10px;
+                text-align: left;
+                font-size: 14px;
+            }}
+            QPushButton:hover {{ color: {PRIMARY_HOVER}; }}
+            QPushButton:pressed {{ color: {PRIMARY_PRESSED}; }}
+        """)
+
+        if accion is not None:
+            self.clicked.connect(accion)

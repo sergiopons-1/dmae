@@ -1,12 +1,12 @@
-from PyQt6.QtWidgets import (QDialog, QGridLayout, QWidget)
+from PyQt6.QtWidgets import (QDialog, QGridLayout, QWidget, QCompleter)
 from PyQt6.QtCore import Qt
 import re
 from shared.widgets.buttons import PrimaryButton
 from shared.widgets.fondo import BeigeBg
-from shared.widgets.text import FormField, TextoInicio
+from shared.widgets.text import FormField, FormComboField, TextoInicio
 from shared.widgets.imagenes import Imagenes
 from shared.widgets.layout import CenterLayout
-from api_cliente import singin
+from api_cliente import singin, obtener_clinicas
 
 PRIMARY = "#0E4C66"
 BLACK = "#000000"
@@ -48,6 +48,10 @@ class Registro(QDialog, BeigeBg):
         self.error_correo = TextoInicio(label="", tamano=12, error=True)
         self.error_correo.setVisible(False)  
         self.contraseña = FormField(label="Contraseña", tamano=14, password=True)
+        self.clinica = FormComboField(label="Clínica", tamano=14)
+        self.clinica.input.lineEdit().setPlaceholderText("Buscar clínica")
+        self.error_clinica = TextoInicio(label="", tamano=12, error=True)
+        self.error_clinica.setVisible(False)
         self.label_error = TextoInicio(label="", tamano=12, error=True)
         self.label_error.setVisible(False)
         self.registrarse = PrimaryButton(text="Registrarse", accion=self.register)
@@ -61,6 +65,8 @@ class Registro(QDialog, BeigeBg):
         self.center_layout.addWidget(self.correo)        
         self.center_layout.addWidget(self.error_correo)
         self.center_layout.addWidget(self.contraseña)
+        self.center_layout.addWidget(self.clinica)
+        self.center_layout.addWidget(self.error_clinica)
         self.center_layout.addWidget(self.label_error)
         self.center_layout.addWidget(self.registrarse)
         self.center_layout.addWidget(self.texto)
@@ -69,6 +75,32 @@ class Registro(QDialog, BeigeBg):
         self.center_widget = QWidget()
         self.center_widget.setLayout(self.center_layout)
         main_layout.addWidget(self.center_widget, 0, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self._cargar_clinicas()
+
+    def _cargar_clinicas(self):
+        self.clinica.input.clear()
+        self.clinica.input.addItem("Selecciona una clínica", None)
+
+        status_code, data = obtener_clinicas()
+        if status_code != 200 or not isinstance(data, list):
+            self.label_error.setText("No se pudieron cargar las clínicas. Inténtalo de nuevo.")
+            self.label_error.setVisible(True)
+            return
+
+        nombres_clinicas = []
+        for item in data:
+            clinic_id = item.get("id")
+            nombre = (item.get("nombre") or "").strip()
+            if clinic_id is None or not nombre:
+                continue
+            self.clinica.input.addItem(nombre, clinic_id)
+            nombres_clinicas.append(nombre)
+
+        completer = QCompleter(nombres_clinicas, self.clinica.input)
+        completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        self.clinica.input.setCompleter(completer)
         
     def register(self):
         username = self.nombre_usuario.text().strip()
@@ -79,11 +111,26 @@ class Registro(QDialog, BeigeBg):
 
         self.error_username.setVisible(False)
         self.error_correo.setVisible(False)
+        self.error_clinica.setVisible(False)
         self.label_error.setVisible(False)
 
         if not all([username, password, email, first_name, last_name]):
             self.label_error.setText("Todos los campos son obligatorios")
             self.label_error.setVisible(True)
+            return
+
+        clinic_id = self.clinica.input.currentData()
+        if clinic_id is None:
+            clinic_name = self.clinica.input.currentText().strip().lower()
+            for i in range(self.clinica.input.count()):
+                if (self.clinica.input.itemText(i) or "").strip().lower() == clinic_name:
+                    clinic_id = self.clinica.input.itemData(i)
+                    self.clinica.input.setCurrentIndex(i)
+                    break
+
+        if clinic_id is None:
+            self.error_clinica.setText("Selecciona una clínica válida")
+            self.error_clinica.setVisible(True)
             return
 
         if len(username) > 150:
@@ -116,7 +163,7 @@ class Registro(QDialog, BeigeBg):
             self.error_correo.setVisible(True)
             return
 
-        status_code, data = singin(username, password, email, first_name, last_name)
+        status_code, data = singin(username, password, email, first_name, last_name, clinic_id)
 
         if status_code == 201:
             self.router.set_specialist_session(
@@ -158,6 +205,8 @@ class Registro(QDialog, BeigeBg):
         self.apellidos.input.clear()
         self.correo.input.clear()
         self.contraseña.input.clear()
+        self.clinica.input.setCurrentIndex(0)
         self.error_username.setVisible(False)
         self.error_correo.setVisible(False)
+        self.error_clinica.setVisible(False)
         self.label_error.setVisible(False)

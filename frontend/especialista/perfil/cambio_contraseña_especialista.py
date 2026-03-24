@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QDialog
 from PyQt6.QtCore import Qt
-from shared.widgets.buttons import PrimaryButton
+from shared.widgets.buttons import PrimaryButton, BackButton
 from shared.widgets.fondo import BeigeBg
 from shared.widgets.text import FormField, TextoInicio
 from shared.widgets.imagenes import Imagenes
@@ -36,6 +36,7 @@ class CambiarContraseña(QDialog, BeigeBg):
         self.label_error = TextoInicio(label="", tamano=12, error=True)
         self.label_error.setVisible(False)
         self.cambiar_contrasena = PrimaryButton(text="Confirmar contraseña", tamano=15, accion = self.cambio_contrasena)
+        self.back_button = BackButton(accion=self.volver)
         
         center_layout.addWidget(self.texto1)
         center_layout.addWidget(self.texto2)
@@ -43,12 +44,16 @@ class CambiarContraseña(QDialog, BeigeBg):
         center_layout.addWidget(self.repetir_contraseña)
         center_layout.addWidget(self.label_error)
         center_layout.addWidget(self.cambiar_contrasena)
+        center_layout.addWidget(self.back_button)
 
         main_layout.addLayout(center_layout)
 
     def set_nombre_especialista(self, nombre: str):
         self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
         self.texto1.setText(f"Hola {self.nombre_especialista}")
+    
+    def volver(self):
+        self.router.show_perfil_especialista()
 
     def cambio_contrasena(self):
         nueva = self.contraseña.text().strip()

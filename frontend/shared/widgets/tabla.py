@@ -78,7 +78,7 @@ class TablaPacientes(QWidget):
         # ── Paginación ───────────────────────────────────────
         pag_layout = QHBoxLayout()
         pag_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        pag_layout.setSpacing(20)
+        pag_layout.setSpacing(10)
 
         self.btn_anterior = PaginationButton("<", self._pagina_anterior)
 
@@ -92,7 +92,7 @@ class TablaPacientes(QWidget):
 
         layout_principal = QVBoxLayout(self)
         layout_principal.setContentsMargins(0, 0, 0, 0)
-        layout_principal.setSpacing(14)
+        layout_principal.setSpacing(10)
         layout_principal.addWidget(self.tabla)
         layout_principal.addLayout(pag_layout)
 

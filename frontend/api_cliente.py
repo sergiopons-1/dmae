@@ -42,14 +42,24 @@ def login(username, password):
     except requests.exceptions.RequestException as exc:
         return _network_error_response(exc)
 
-def singin(username, password, email, first_name, last_name):
+def singin(username, password, email, first_name, last_name, clinic_id):
     try:
         r = requests.post(f"{BASE_URL}/registro/", json={
             "username": username, "password": password,
             "email": email, "first_name": first_name,
-            "last_name": last_name
+            "last_name": last_name,
+            "clinic_id": clinic_id,
         }, timeout=10)
         return r.status_code, r.json()
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
+
+
+def obtener_clinicas():
+    try:
+        r = requests.get(f"{BASE_URL}/clinicas/", timeout=10)
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
     except requests.exceptions.RequestException as exc:
         return _network_error_response(exc)
 

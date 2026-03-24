@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QLineEdit, QSizePolicy)
+from PyQt6.QtWidgets import (QWidget, QHBoxLayout, QLabel, QLineEdit, QSizePolicy, QComboBox)
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont, QFontMetrics, QIcon, QAction
 
@@ -125,3 +125,54 @@ class FormField(QWidget):
     
     def text(self) -> str:
         return self.input.text()
+
+
+class FormComboField(QWidget):
+    def __init__(self, label: str, tamano: int = 15, negrita: bool = True, parent=None):
+        super().__init__(parent)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignRight)
+        layout.setSpacing(50)
+
+        lbl = QLabel(label)
+        lbl.setFont(QFont("Segoe UI", tamano))
+        if negrita:
+            lbl.setFont(QFont("Segoe UI", tamano, QFont.Weight.Bold))
+
+        lbl.setMinimumWidth(200)
+        lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        lbl.setStyleSheet(f"color: {PRIMARY};")
+        lbl.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(lbl)
+
+        self.input = QComboBox()
+        self.input.setEditable(True)
+        self.input.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self.input.lineEdit().setPlaceholderText("Buscar")
+        self.input.setMinimumHeight(34)
+        self.input.setFixedWidth(250)
+        self.input.setFont(QFont("Segoe UI", tamano))
+        self.input.setStyleSheet(f"""
+            QComboBox {{
+                background: white;
+                border: 1px solid {PRIMARY};
+                border-radius: 4px;
+                padding: 4px 10px;
+                color: {PRIMARY};
+            }}
+            QComboBox QLineEdit {{
+                color: {PRIMARY};
+            }}
+            QComboBox QAbstractItemView {{
+                color: {PRIMARY};
+                selection-background-color: {PRIMARY};
+                selection-color: {PRIMARY};
+            }}
+            QComboBox QAbstractItemView::item {{
+                border-bottom: 1px solid {PRIMARY};
+                padding: 6px 10px;
+            }}
+        """)
+        layout.addWidget(self.input)

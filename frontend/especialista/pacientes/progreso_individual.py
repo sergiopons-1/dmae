@@ -1,6 +1,6 @@
 from shared.widgets.especialista.sidebar import Sidebar
 from shared.widgets.text import TextoInicio
-from shared.widgets.buttons import PrimaryButton
+from shared.widgets.buttons import PrimaryButton, BackButton
 from shared.widgets.tabla import TablaPacientes
 from shared.widgets.banner import Banner
 from api_cliente import obtener_progreso_individual
@@ -103,7 +103,9 @@ class ProgresoIndividual(QWidget):
         vista_progreso_layout = QVBoxLayout(self.vista_progreso)
         vista_progreso_layout.setContentsMargins(0, 0, 0, 0)
         self.tabla_progreso = TablaPacientes(columnas=5, headers=["Número", "Fecha inicio", "Fecha fin", "Estado", "Puntuación"])
+        self.back_button = BackButton(accion=self.volver)
         vista_progreso_layout.addWidget(self.tabla_progreso)
+        vista_progreso_layout.addWidget(self.back_button, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         # Vista notas
         self.vista_notas = QWidget()
@@ -115,8 +117,11 @@ class ProgresoIndividual(QWidget):
         vista_notas_layout.addWidget(self.boton, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         self.tabla_notas = TablaPacientes(columnas=3, min_height=200, headers=["Número de nota", "Descripción", "Fecha de emisión"])
+        self.back_button = BackButton(accion=self.volver)
         vista_notas_layout.addWidget(self.tabla_notas)
-        vista_notas_layout.addSpacing(10)
+        vista_notas_layout.addWidget(self.back_button, alignment=Qt.AlignmentFlag.AlignHCenter)
+        
+        
 
         self.panel_vistas = QStackedWidget()
         self.panel_vistas.addWidget(self.vista_progreso)
@@ -131,6 +136,9 @@ class ProgresoIndividual(QWidget):
 
         self._actualizar_tabla()
         self._actualizar_notas_tabla()
+
+    def volver(self):
+        self.router.show_pacientes_especialista()
 
     def set_nombre_especialista(self, nombre: str):
         self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"

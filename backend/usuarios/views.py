@@ -14,7 +14,7 @@ from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from rest_framework_simplejwt.tokens import RefreshToken
-from usuarios.models import Usuario, Especialista, Paciente
+from usuarios.models import Usuario, Especialista, Paciente, Clinica
 
 ########################################### ESPECIALISTA ####################################################
 
@@ -54,8 +54,9 @@ def registro(request):
     email = (request.data.get('email') or '').strip()
     first_name = (request.data.get('first_name') or '').strip()
     last_name = (request.data.get('last_name') or '').strip()
+    clinic_id = request.data.get('clinic_id')
 
-    if not all([username, password, email, first_name, last_name]):
+    if not all([username, password, email, first_name, last_name]) or clinic_id in (None, ""):
         return Response({'error': 'Todos los campos son obligatorios'}, status=status.HTTP_400_BAD_REQUEST)
     elif len(username) > 150:
         return Response({'error': 'El nombre de usuario no puede superar 150 caracteres'}, status=status.HTTP_400_BAD_REQUEST)
@@ -80,6 +81,15 @@ def registro(request):
     except ValidationError:
         return Response({'error': 'El correo electrónico no es válido'}, status=status.HTTP_400_BAD_REQUEST)
 
+    try:
+        clinic_id = int(clinic_id)
+    except (TypeError, ValueError):
+        return Response({'error': 'La clínica seleccionada no es válida'}, status=status.HTTP_400_BAD_REQUEST)
+
+    clinica = Clinica.objects.filter(pk=clinic_id).first()
+    if clinica is None:
+        return Response({'error': 'La clínica seleccionada no existe'}, status=status.HTTP_400_BAD_REQUEST)
+
     temp_user = Usuario(username=username, email=email, first_name=first_name, last_name=last_name, rol='especialista')
     
     try:
@@ -92,11 +102,14 @@ def registro(request):
     elif Usuario.objects.filter(email__iexact=email).exists():
         return Response({'error': 'El correo electrónico ya está en uso'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user = Usuario.objects.create_user(
-        username=username, password=password,
-        email=email, first_name=first_name,
-        last_name=last_name, rol='especialista'
-    )
+    with transaction.atomic():
+        user = Usuario.objects.create_user(
+            username=username, password=password,
+            email=email, first_name=first_name,
+            last_name=last_name, rol='especialista',
+            clinica=clinica,
+        )
+        Especialista.objects.get_or_create(usuario=user)
     user.last_login = timezone.now()
     user.save(update_fields=['last_login'])
     
@@ -111,6 +124,19 @@ def registro(request):
         },
         status=status.HTTP_201_CREATED,
     )
+
+
+@api_view(['GET'])
+def clinicas(request):
+    data = [
+        {
+            'id': clinica.idClinica,
+            'nombre': clinica.nombre,
+            'direccion': clinica.direccion,
+        }
+        for clinica in Clinica.objects.all().order_by('nombre')
+    ]
+    return Response(data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def nombre(request, name):
@@ -209,6 +235,8 @@ def registro_paciente(request):
 
     if request.user.rol != 'especialista':
         return Response({'error': 'Solo un especialista puede registrar pacientes'}, status=status.HTTP_403_FORBIDDEN)
+
+    especialista, _ = Especialista.objects.get_or_create(usuario=request.user)
 
     
     if Paciente.objects.filter(dni=dni).exists():
