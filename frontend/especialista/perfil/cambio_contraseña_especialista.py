@@ -82,6 +82,8 @@ class CambiarContraseña(QDialog, BeigeBg):
         if status_code == 200:
             self.contraseña.input.clear()
             self.repetir_contraseña.input.clear()
+            if hasattr(self.router, "logout_specialist_session"):
+                self.router.logout_specialist_session()
             self.router.show_specialist_login()
             if hasattr(self.router.iniciar_sesion, "mostrar_banner_exito"):
                 self.router.iniciar_sesion.mostrar_banner_exito("contraseña cambiada correctamente", duracion_ms=3000)
