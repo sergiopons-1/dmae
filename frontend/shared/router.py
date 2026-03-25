@@ -7,7 +7,7 @@ from auth.inicio_sesion import IniciarSesion
 from auth.registro import Registro
 from especialista.inicio_especialista import InicioEspecialista
 from especialista.perfil.perfil_especialista import PerfilEspecialista
-from especialista.perfil.cambio_contraseña_especialista import CambiarContraseña
+from auth.cambio_contraseña import CambiarContraseña
 from especialista.pacientes.mis_pacientes import PacientesEspecialista
 from especialista.pacientes.registrar_paciente import RegistrarPaciente
 from especialista.pacientes.generacion_codigo import GenerarCodigoPaciente
@@ -121,6 +121,7 @@ class Router(QMainWindow):
         vistas = [
             self.inicio_paciente,
             self.perfil_paciente,
+            self.cambiar_contrasena,
             self.ajustes_paciente,
             self.mi_progreso_paciente,
         ]
@@ -197,8 +198,11 @@ class Router(QMainWindow):
             self.clear_patient_session()
         self.stack.setCurrentWidget(self.inicio)
 
-    def show_specialist_login(self):
+    def show_login(self):
         self.stack.setCurrentWidget(self.iniciar_sesion)
+
+    def show_specialist_login(self):
+        self.show_login()
 
     def show_specialist_registration(self):
         self.stack.setCurrentWidget(self.registro)
@@ -246,9 +250,6 @@ class Router(QMainWindow):
     def show_perfil_paciente(self):
         self.stack.setCurrentWidget(self.perfil_paciente)
 
-    def show_perfil_paciente(self):
-        self.stack.setCurrentWidget(self.perfil_paciente)
-
     def show_ajustes_paciente(self):
         self.stack.setCurrentWidget(self.ajustes_paciente)
 
@@ -257,8 +258,16 @@ class Router(QMainWindow):
             self.mi_progreso_paciente._cargar_datos_reales()
         self.stack.setCurrentWidget(self.mi_progreso_paciente)
 
-    def logout_patient_session(self):
-        if self.refresh_token:
-            logout_api(self.refresh_token, self.auth_token)
-        self.show_inicio()
+
+    def show_perfil_actual(self):
+        if self.user_rol == 'paciente':
+            self.show_perfil_paciente()
+        else:
+            self.show_perfil_especialista()
+
+    def logout_current_session(self):
+        if self.user_rol == 'paciente':
+            self.logout_patient_session()
+        else:
+            self.logout_specialist_session()
 

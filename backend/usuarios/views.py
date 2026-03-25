@@ -187,9 +187,6 @@ def nombre(request, name):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def cambiar_contrasena(request):
-    if request.user.rol != 'especialista':
-        return Response({'error': 'Solo un especialista puede cambiar su contraseña'}, status=status.HTTP_403_FORBIDDEN)
-
     password = (request.data.get('password') or '').strip()
 
     if not password:

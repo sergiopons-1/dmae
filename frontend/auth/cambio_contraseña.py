@@ -16,7 +16,7 @@ class CambiarContraseña(QDialog, BeigeBg):
     def __init__(self, router):
         super().__init__()
         self.router = router
-        self.nombre_especialista = "Especialista"
+        self.nombre_usuario = "Usuario"
         self.a()
 
     def a(self):
@@ -49,11 +49,21 @@ class CambiarContraseña(QDialog, BeigeBg):
         main_layout.addLayout(center_layout)
 
     def set_nombre_especialista(self, nombre: str):
-        self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
-        self.texto1.setText(f"Hola {self.nombre_especialista}")
+        self.set_nombre_usuario(nombre, "Especialista")
+
+    def set_nombre_paciente(self, nombre: str):
+        self.set_nombre_usuario(nombre, "Paciente")
+
+    def set_nombre_usuario(self, nombre: str, fallback: str = "Usuario"):
+        self.nombre_usuario = (nombre or fallback).strip() or fallback
+        self.texto1.setText(f"Hola {self.nombre_usuario}")
     
     def volver(self):
-        self.router.show_perfil_especialista()
+        rol = getattr(self.router, "user_rol", None)
+        if rol == "paciente":
+            self.router.show_perfil_paciente()
+        else:
+            self.router.show_perfil_especialista()
 
     def cambio_contrasena(self):
         nueva = self.contraseña.text().strip()
@@ -82,9 +92,14 @@ class CambiarContraseña(QDialog, BeigeBg):
         if status_code == 200:
             self.contraseña.input.clear()
             self.repetir_contraseña.input.clear()
-            if hasattr(self.router, "logout_specialist_session"):
+            rol = getattr(self.router, "user_rol", None)
+            if rol == "paciente" and hasattr(self.router, "logout_patient_session"):
+                self.router.logout_patient_session()
+            elif hasattr(self.router, "logout_specialist_session"):
                 self.router.logout_specialist_session()
-            self.router.show_specialist_login()
+
+            if hasattr(self.router, "show_login"):
+                self.router.show_login()
             if hasattr(self.router.iniciar_sesion, "mostrar_banner_exito"):
                 self.router.iniciar_sesion.mostrar_banner_exito("contraseña cambiada correctamente", duracion_ms=3000)
             return
