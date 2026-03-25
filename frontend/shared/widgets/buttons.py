@@ -84,7 +84,7 @@ class PaginationButton(QPushButton):
 
 
 class BackButton(QPushButton):
-    def __init__(self, text: str = "Volver", tamano: int = 14, accion=None, parent=None):
+    def __init__(self, text: str = "Volver", tamano: int = 24, accion=None, parent=None):
         super().__init__(f"← {text}", parent)
         self.setFixedHeight(40)
         self.setCursor(Qt.CursorShape.PointingHandCursor)

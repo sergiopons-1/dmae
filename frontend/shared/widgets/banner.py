@@ -51,7 +51,7 @@ class Banner(QLabel):
             """
         )
 
-    def mostrar(self, mensaje: str, tipo: str = "success", duracion_ms: int = 3000):
+    def mostrar(self, mensaje: str, tipo: str = "success", duracion_ms: int = 5000):
         self._hide_timer.stop()
         self._aplicar_estilo(tipo)
         self.setText(mensaje)
