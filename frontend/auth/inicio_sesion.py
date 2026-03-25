@@ -99,6 +99,8 @@ class IniciarSesion(QDialog, BeigeBg):
                     nombre=nombre,
                     username=username,
                     email=email,
+                    dni=data.get('dni', ''),
+                    birth_date=data.get('birth_date', ''),
                 )
                 self.router.show_inicio_paciente()
             else:

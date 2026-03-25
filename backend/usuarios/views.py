@@ -51,12 +51,17 @@ def login(request):
         'clinic_id': user.clinica_id,
         })
     elif user.rol == 'paciente':
+        paciente = Paciente.objects.filter(usuario=user).first()
+        dni = paciente.dni if paciente else ""
+        fecha_nacimiento = paciente.fechaNacimiento.isoformat() if paciente and paciente.fechaNacimiento else ""
         return Response({
             'token': str(refresh.access_token),
             'refresh': str(refresh),
             'rol': user.rol,
             'nombre': nombre_completo,
             'email': user.email,
+            'dni': dni,
+            'birth_date': fecha_nacimiento,
         })
 
 @api_view(['POST'])

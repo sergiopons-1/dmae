@@ -49,7 +49,7 @@ class PerfilPaciente(QWidget):
         self.nombre_paciente = (nombre or "Paciente").strip() or "Paciente"
         self.sidebar.set_nombre(self.nombre_paciente)
 
-    def set_datos_paciente(self, username: str, nombre: str, email: str = "", fecha_nacimiento: str = ""):
+    def set_datos_paciente(self, dni: str = "", nombre: str = "", email: str = "", fecha_nacimiento: str = ""):
         nombre_limpio = (nombre or "Paciente").strip() or "Paciente"
         self.set_nombre_paciente(nombre_limpio)
 
@@ -58,7 +58,7 @@ class PerfilPaciente(QWidget):
         else:
             first_name, last_name = nombre_limpio, ""
 
-        self.dni.dato.setText(username or "-")
+        self.dni.dato.setText(dni or "-")
         self.nombre.dato.setText(first_name)
         self.apellidos.dato.setText(last_name or "-")
         self.correo.dato.setText(email or "-")

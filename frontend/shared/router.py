@@ -128,6 +128,14 @@ class Router(QMainWindow):
             if hasattr(vista, "set_nombre_paciente"):
                 vista.set_nombre_paciente(self.paciente_nombre)
 
+        if hasattr(self.perfil_paciente, "set_datos_paciente"):
+            self.perfil_paciente.set_datos_paciente(
+                dni=self.paciente_dni,
+                nombre=self.paciente_nombre,
+                email=self.paciente_email,
+                fecha_nacimiento=self.birth_date,
+            )
+
     def set_specialist_session(self, token: str, refresh_token: str = "", nombre: str = "", username: str = "", email: str = "", clinic_id=None):
         self.auth_token = token
         self.refresh_token = refresh_token or ""
@@ -138,13 +146,15 @@ class Router(QMainWindow):
         self.clinic_id = clinic_id
         self._sync_specialist_name()
     
-    def set_patient_session(self, token: str, refresh_token: str = "", nombre: str = "", username: str = "", email: str = ""):
+    def set_patient_session(self, token: str, refresh_token: str = "", username: str = "", nombre: str = "", dni: str = "", email: str = "", birth_date: str = ""):
         self.auth_token = token
         self.refresh_token = refresh_token or ""
         self.user_rol = 'paciente'
-        self.paciente_nombre = (nombre or "").strip()
         self.paciente_username = username or ""
+        self.paciente_nombre = (nombre or "").strip()
+        self.paciente_dni = dni or ""
         self.paciente_email = email or ""
+        self.birth_date = birth_date or ""
         self._sync_patient_name()
 
     def clear_specialist_session(self):
@@ -161,9 +171,11 @@ class Router(QMainWindow):
         self.auth_token = None
         self.refresh_token = None
         self.user_rol = None
-        self.paciente_nombre = ""
         self.paciente_username = ""
+        self.paciente_nombre = ""
+        self.paciente_dni = ""
         self.paciente_email = ""
+        self.birth_date = ""
         self._sync_patient_name()
 
     def logout_specialist_session(self):
