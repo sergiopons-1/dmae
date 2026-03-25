@@ -149,12 +149,27 @@ class SidebarPaciente(QWidget):
         if self.router is None and parent is not None and hasattr(parent, "router"):
             self.router = parent.router
 
+        # Si existe sesion de paciente en el router, prioriza ese nombre.
+        self.nombre = self._nombre_desde_router() or self.nombre
+
         ancho_sidebar = self._calcular_ancho_sidebar()
         self.setFixedWidth(ancho_sidebar)  # mismo ancho en todos los apartados
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self.setStyleSheet(f"background-color: {SIDEBAR_BG};")
 
         self._build_ui()
+
+    def _nombre_desde_router(self) -> str:
+        if self.router is None:
+            return ""
+        nombre = getattr(self.router, "paciente_nombre", "")
+        return (nombre or "").strip()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        nombre_router = self._nombre_desde_router()
+        if nombre_router:
+            self.set_nombre(nombre_router)
 
     def _calcular_ancho_sidebar(self) -> int:
         # 16% del ancho de pantalla, acotado para mantener diseño

@@ -130,6 +130,7 @@ class Router(QMainWindow):
 
         if hasattr(self.perfil_paciente, "set_datos_paciente"):
             self.perfil_paciente.set_datos_paciente(
+                username=self.paciente_username,
                 dni=self.paciente_dni,
                 nombre=self.paciente_nombre,
                 email=self.paciente_email,

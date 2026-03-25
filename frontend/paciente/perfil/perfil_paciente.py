@@ -24,6 +24,7 @@ class PerfilPaciente(QWidget):
         center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.label = TextoInicio(label="Mi perfil", tamano=22, negrita=True, upper=True)
+        self.username = DatosPerfil(label="Nombre de usuario:", label2="username", tamano=15)
         self.dni = DatosPerfil(label="DNI:", label2="dni", tamano=15)
         self.nombre = DatosPerfil(label="Nombre:", label2="nombre", tamano=15)
         self.apellidos = DatosPerfil(label="Apellidos:", label2="apellidos", tamano=15)
@@ -33,6 +34,7 @@ class PerfilPaciente(QWidget):
         
 
         center_layout.addWidget(self.label)
+        center_layout.addWidget(self.username)
         center_layout.addWidget(self.dni)
         center_layout.addWidget(self.nombre)
         center_layout.addWidget(self.apellidos)
@@ -44,12 +46,9 @@ class PerfilPaciente(QWidget):
         center_widget.setStyleSheet("background-color: #FFF7E7;")
         center_widget.setLayout(center_layout)
         main.addWidget(center_widget)
+        
 
-    def set_nombre_paciente(self, nombre: str):
-        self.nombre_paciente = (nombre or "Paciente").strip() or "Paciente"
-        self.sidebar.set_nombre(self.nombre_paciente)
-
-    def set_datos_paciente(self, dni: str = "", nombre: str = "", email: str = "", fecha_nacimiento: str = ""):
+    def set_datos_paciente(self, username: str = "", dni: str = "", nombre: str = "", email: str = "", fecha_nacimiento: str = ""):
         nombre_limpio = (nombre or "Paciente").strip() or "Paciente"
         self.set_nombre_paciente(nombre_limpio)
 
@@ -58,6 +57,7 @@ class PerfilPaciente(QWidget):
         else:
             first_name, last_name = nombre_limpio, ""
 
+        self.username.dato.setText(username or "-")
         self.dni.dato.setText(dni or "-")
         self.nombre.dato.setText(first_name)
         self.apellidos.dato.setText(last_name or "-")
