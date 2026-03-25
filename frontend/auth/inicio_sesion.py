@@ -76,15 +76,36 @@ class IniciarSesion(QDialog, BeigeBg):
         status_code, data = login(username, password)
 
         if status_code == 200:
-            self.router.set_specialist_session(
-                token=data.get('token', ''),
-                refresh_token=data.get('refresh', ''),
-                nombre=data.get('nombre', ''),
-                username=username,
-                email=data.get('email', ''),
-                clinic_id=data.get('clinic_id'),
-            )
-            self.router.show_inicio_especialista()
+            rol = (data.get('rol') or '').lower()
+            nombre = data.get('nombre', '')
+            email = data.get('email', '')
+            token = data.get('token', '')
+            refresh_token = data.get('refresh', '')
+            
+            if rol == 'especialista':
+                self.router.set_specialist_session(
+                    token=token,
+                    refresh_token=refresh_token,
+                    nombre=nombre,
+                    username=username,
+                    email=email,
+                    clinic_id=data.get('clinic_id'),
+                )
+                self.router.show_inicio_especialista()
+            elif rol == 'paciente':
+                self.router.set_patient_session(
+                    token=token,
+                    refresh_token=refresh_token,
+                    nombre=nombre,
+                    username=username,
+                    email=email,
+                )
+                self.router.show_inicio_paciente()
+            else:
+                self.error_username.setText('Rol de usuario no válido')
+                self.error_username.setVisible(True)
+                self.error_contrasena.setVisible(False)
+                return
             self.nombre_usuario.input.clear()
             self.error_username.setVisible(False)
             self.error_contrasena.setVisible(False)

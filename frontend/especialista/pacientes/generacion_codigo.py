@@ -6,11 +6,11 @@ from PyQt6.QtCore import Qt
 from shared.widgets.buttons import PrimaryButton
 from shared.widgets.banner import Banner
 from shared.widgets.layout import CenterLayout
-from shared.widgets.especialista.sidebar import Sidebar
+from shared.widgets.sidebar import SidebarEspecialista
 from shared.widgets.text import TextoInicio
 
 class GenerarCodigoPaciente(QDialog):
-    def __init__(self, router, nombre="Carlos Mateo"):
+    def __init__(self, router, nombre=""):
         super().__init__()
         self.router = router
         self.nombre_especialista = nombre
@@ -20,7 +20,7 @@ class GenerarCodigoPaciente(QDialog):
         main.setContentsMargins(0, 0, 0, 0)
         main.setSpacing(0)
 
-        self.sidebar = Sidebar(nombre=nombre, parent=self)
+        self.sidebar = SidebarEspecialista(nombre=nombre, parent=self)
         self.sidebar.go_logout.connect(self.router.show_inicio)
         main.addWidget(self.sidebar)
 

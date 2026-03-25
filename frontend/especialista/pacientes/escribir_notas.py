@@ -3,7 +3,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QColor
 from shared.widgets.buttons import PrimaryButton
 from shared.widgets.layout import CenterLayout
-from shared.widgets.especialista.sidebar import Sidebar
+from shared.widgets.sidebar import SidebarEspecialista
 from shared.widgets.text import TextoInicio, FormField
 from api_cliente import crear_nota
 
@@ -22,7 +22,7 @@ class PublicarNota(QDialog):
         main.setContentsMargins(0, 0, 0, 0)
         main.setSpacing(0)
 
-        self.sidebar = Sidebar(nombre=nombre, parent=self)
+        self.sidebar = SidebarEspecialista(nombre=nombre, parent=self)
         self.sidebar.go_logout.connect(self.router.show_inicio)
         main.addWidget(self.sidebar)
 

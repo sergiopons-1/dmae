@@ -6,7 +6,7 @@ from django.db import transaction
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from django.contrib.auth.password_validation import validate_password
@@ -20,14 +20,15 @@ from usuarios.models import Usuario, Especialista, Paciente, Clinica
 ########################################### ESPECIALISTA ####################################################
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login(request):
     username = request.data.get('username')
     password = request.data.get('password')
 
     user = Usuario.objects.filter(username=username).first()
-    if user is None or user.rol != 'especialista':
+    if not user:
         return Response({'error': 'Nombre de usuario incorrecto'}, status=status.HTTP_401_UNAUTHORIZED)
-
+    
     if not user.check_password(password):
         return Response({'error': 'Contraseña incorrecta'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -40,16 +41,26 @@ def login(request):
 
     refresh = RefreshToken.for_user(user)
     nombre_completo = user.get_full_name().strip() or user.username
-    return Response({
+    if user.rol == 'especialista':
+        return Response({
         'token': str(refresh.access_token),
         'refresh': str(refresh),
         'rol': user.rol,
         'nombre': nombre_completo,
         'email': user.email,
         'clinic_id': user.clinica_id,
-    })
+        })
+    elif user.rol == 'paciente':
+        return Response({
+            'token': str(refresh.access_token),
+            'refresh': str(refresh),
+            'rol': user.rol,
+            'nombre': nombre_completo,
+            'email': user.email,
+        })
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def registro(request):
     username = (request.data.get('username') or '').strip()
     password = (request.data.get('password') or '').strip()
@@ -146,6 +157,7 @@ def logout(request):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def clinicas(request):
     data = [
         {
@@ -158,6 +170,7 @@ def clinicas(request):
     return Response(data, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def nombre(request, name):
     user = Usuario.objects.filter(username=name).first()
     if user and user.rol == 'especialista':

@@ -1,4 +1,4 @@
-from shared.widgets.especialista.sidebar import Sidebar
+from shared.widgets.sidebar import SidebarEspecialista
 from shared.widgets.text import TextoInicio
 from shared.widgets.buttons import PrimaryButton
 from shared.widgets.tabla import TablaPacientes
@@ -14,7 +14,7 @@ BG_COLOR   = "#FFF7E7"
 
 
 class PacientesEspecialista(QWidget):
-    def __init__(self, router, nombre="Carlos Mateo"):
+    def __init__(self, router, nombre=""):
         super().__init__()
         self.router = router
         self.nombre_especialista = nombre
@@ -27,7 +27,7 @@ class PacientesEspecialista(QWidget):
         main.setSpacing(0)
 
         # ── Sidebar ──────────────────────────────────────────
-        self.sidebar = Sidebar(nombre=nombre, parent=self)
+        self.sidebar = SidebarEspecialista(nombre=nombre, parent=self)
         self.sidebar.go_logout.connect(self.router.show_inicio)
         self.sidebar.go_perfil.connect(self.router.show_perfil_especialista)
         main.addWidget(self.sidebar)

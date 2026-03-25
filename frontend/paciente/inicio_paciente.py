@@ -1,28 +1,28 @@
-from shared.widgets.sidebar import SidebarEspecialista
+from shared.widgets.sidebar import SidebarPaciente
 from PyQt6.QtWidgets import QHBoxLayout, QWidget
 from PyQt6.QtGui import QPainter, QPixmap, QColor
 from PyQt6.QtCore import Qt
 
-class InicioEspecialista(QWidget):
+class InicioPaciente(QWidget):
     def __init__(self, router, nombre=""):
         super().__init__()
         self.router = router
-        self.nombre_especialista = nombre
+        self.nombre_paciente = nombre
 
         main = QHBoxLayout(self)
         main.setContentsMargins(0, 0, 0, 0)
         main.setSpacing(0)
 
-        self.sidebar = SidebarEspecialista(nombre=nombre, parent=self)
+        self.sidebar = SidebarPaciente(nombre=nombre, parent=self)
         self.sidebar.go_logout.connect(self.router.show_inicio)
         main.addWidget(self.sidebar)
 
         self.contenido = FondoConOverlay("assets/images/foto_pueblo.png")
         main.addWidget(self.contenido, stretch=1)
 
-    def set_nombre_especialista(self, nombre: str):
-        self.nombre_especialista = (nombre or "Especialista").strip() or "Especialista"
-        self.sidebar.set_nombre(self.nombre_especialista)
+    def set_nombre_paciente(self, nombre: str):
+        self.nombre_paciente = (nombre or "Paciente").strip() or "Paciente"
+        self.sidebar.set_nombre(self.nombre_paciente)
 
 class FondoConOverlay(QWidget):
     def __init__(self, ruta_imagen: str, parent=None):

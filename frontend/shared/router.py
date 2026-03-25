@@ -13,6 +13,13 @@ from especialista.pacientes.registrar_paciente import RegistrarPaciente
 from especialista.pacientes.generacion_codigo import GenerarCodigoPaciente
 from especialista.pacientes.progreso_individual import ProgresoIndividual
 from especialista.pacientes.escribir_notas import PublicarNota
+
+from paciente.inicio_paciente import InicioPaciente
+from paciente.perfil.perfil_paciente import PerfilPaciente
+from paciente.juego.mi_progreso import MiProgreso
+from paciente.ajustes.ajustes import Ajustes 
+
+
 from api_cliente import logout as logout_api
 
 
@@ -22,10 +29,18 @@ class Router(QMainWindow):
         super().__init__()
         self.auth_token = None
         self.refresh_token = None
+        self.user_rol = None
+        
+        # Datos de especialista
         self.especialista_nombre = "Especialista"
         self.especialista_username = ""
         self.especialista_email = ""
         self.clinic_id = None
+        
+        # Datos de paciente
+        self.paciente_nombre = "Paciente"
+        self.paciente_username = ""
+        self.paciente_email = ""
 
         self.setWindowTitle("Pueblo a la Vista")
         logo_path = Path(__file__).resolve().parents[1] / "assets" / "images" / "logo.png"
@@ -52,6 +67,12 @@ class Router(QMainWindow):
         self.progreso_individual = ProgresoIndividual(self)
         self.publicar_nota_paciente = PublicarNota(self)
 
+        #Paciente
+        self.inicio_paciente = InicioPaciente(self)
+        self.perfil_paciente = PerfilPaciente(self)
+        self.ajustes_paciente = Ajustes(self)
+        self.mi_progreso_paciente = MiProgreso(self)
+
         #Añadir al stack
         self.stack.addWidget(self.inicio)
         self.stack.addWidget(self.iniciar_sesion)
@@ -65,6 +86,11 @@ class Router(QMainWindow):
         self.stack.addWidget(self.generar_codigo)
         self.stack.addWidget(self.progreso_individual)
         self.stack.addWidget(self.publicar_nota_paciente)
+
+        self.stack.addWidget(self.inicio_paciente)
+        self.stack.addWidget(self.perfil_paciente)
+        self.stack.addWidget(self.ajustes_paciente)
+        self.stack.addWidget(self.mi_progreso_paciente)
 
         # Pantalla mostrada al ejecutar el programa
         self.stack.setCurrentWidget(self.inicio)
@@ -90,33 +116,72 @@ class Router(QMainWindow):
                 nombre=self.especialista_nombre,
                 email=self.especialista_email,
             )
+    
+    def _sync_patient_name(self):
+        vistas = [
+            self.inicio_paciente,
+            self.perfil_paciente,
+            self.ajustes_paciente,
+            self.mi_progreso_paciente,
+        ]
+        for vista in vistas:
+            if hasattr(vista, "set_nombre_paciente"):
+                vista.set_nombre_paciente(self.paciente_nombre)
 
     def set_specialist_session(self, token: str, refresh_token: str = "", nombre: str = "", username: str = "", email: str = "", clinic_id=None):
         self.auth_token = token
         self.refresh_token = refresh_token or ""
+        self.user_rol = 'especialista'
         self.especialista_nombre = (nombre or "").strip()
         self.especialista_username = username or ""
         self.especialista_email = email or ""
         self.clinic_id = clinic_id
         self._sync_specialist_name()
+    
+    def set_patient_session(self, token: str, refresh_token: str = "", nombre: str = "", username: str = "", email: str = ""):
+        self.auth_token = token
+        self.refresh_token = refresh_token or ""
+        self.user_rol = 'paciente'
+        self.paciente_nombre = (nombre or "").strip()
+        self.paciente_username = username or ""
+        self.paciente_email = email or ""
+        self._sync_patient_name()
 
     def clear_specialist_session(self):
         self.auth_token = None
         self.refresh_token = None
+        self.user_rol = None
         self.especialista_nombre = ""
         self.especialista_username = ""
         self.especialista_email = ""
         self.clinic_id = None
         self._sync_specialist_name()
+    
+    def clear_patient_session(self):
+        self.auth_token = None
+        self.refresh_token = None
+        self.user_rol = None
+        self.paciente_nombre = ""
+        self.paciente_username = ""
+        self.paciente_email = ""
+        self._sync_patient_name()
 
     def logout_specialist_session(self):
+        if self.refresh_token:
+            logout_api(self.refresh_token, self.auth_token)
+        self.show_inicio()
+    
+    def logout_patient_session(self):
         if self.refresh_token:
             logout_api(self.refresh_token, self.auth_token)
         self.show_inicio()
 
 
     def show_inicio(self):
-        self.clear_specialist_session()
+        if self.user_rol == 'especialista':
+            self.clear_specialist_session()
+        elif self.user_rol == 'paciente':
+            self.clear_patient_session()
         self.stack.setCurrentWidget(self.inicio)
 
     def show_specialist_login(self):
@@ -160,3 +225,25 @@ class Router(QMainWindow):
             nombre_paciente = getattr(self.progreso_individual, "_nombre_paciente", "Paciente")
             self.publicar_nota_paciente.set_paciente_id(paciente_id, nombre_paciente)
         self.stack.setCurrentWidget(self.publicar_nota_paciente)
+
+    #Paciente
+    def show_inicio_paciente(self):
+        self.stack.setCurrentWidget(self.inicio_paciente)
+
+    def show_perfil_paciente(self):
+        self.stack.setCurrentWidget(self.perfil_paciente)
+
+    def show_perfil_paciente(self):
+        self.stack.setCurrentWidget(self.perfil_paciente)
+
+    def show_ajustes_paciente(self):
+        self.stack.setCurrentWidget(self.ajustes_paciente)
+
+    def show_mi_progreso_paciente(self):
+        self.stack.setCurrentWidget(self.mi_progreso_paciente)
+
+    def logout_patient_session(self):
+        if self.refresh_token:
+            logout_api(self.refresh_token, self.auth_token)
+        self.show_inicio()
+
