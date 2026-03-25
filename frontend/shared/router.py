@@ -215,7 +215,9 @@ class Router(QMainWindow):
     def show_perfil_especialista(self):
         self.stack.setCurrentWidget(self.perfil_especialista)
 
-    def show_cambiar_contrasena(self):
+    def show_cambiar_contrasena(self, force_password_change: bool = False):
+        if hasattr(self.cambiar_contrasena, "set_modo_forzado"):
+            self.cambiar_contrasena.set_modo_forzado(force_password_change)
         self.stack.setCurrentWidget(self.cambiar_contrasena)
 
     def show_pacientes_especialista(self):

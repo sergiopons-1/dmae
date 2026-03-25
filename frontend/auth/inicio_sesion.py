@@ -102,7 +102,10 @@ class IniciarSesion(QDialog, BeigeBg):
                     dni=data.get('dni', ''),
                     birth_date=data.get('birth_date', ''),
                 )
-                self.router.show_inicio_paciente()
+                if data.get('force_password_change', False):
+                    self.router.show_cambiar_contrasena(force_password_change=True)
+                else:
+                    self.router.show_inicio_paciente()
             else:
                 self.error_username.setText('Rol de usuario no válido')
                 self.error_username.setVisible(True)

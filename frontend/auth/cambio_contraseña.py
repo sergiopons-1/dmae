@@ -17,6 +17,7 @@ class CambiarContraseña(QDialog, BeigeBg):
         super().__init__()
         self.router = router
         self.nombre_usuario = "Usuario"
+        self._forzar_cambio = False
         self.a()
 
     def a(self):
@@ -57,8 +58,16 @@ class CambiarContraseña(QDialog, BeigeBg):
     def set_nombre_usuario(self, nombre: str, fallback: str = "Usuario"):
         self.nombre_usuario = (nombre or fallback).strip() or fallback
         self.texto1.setText(f"Hola {self.nombre_usuario}")
+
+    def set_modo_forzado(self, forzado: bool = False):
+        self._forzar_cambio = bool(forzado)
+        self.back_button.setVisible(not self._forzar_cambio)
     
     def volver(self):
+        if self._forzar_cambio:
+            self.label_error.setText("Debes cambiar la contraseña para continuar")
+            self.label_error.setVisible(True)
+            return
         rol = getattr(self.router, "user_rol", None)
         if rol == "paciente":
             self.router.show_perfil_paciente()

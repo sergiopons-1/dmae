@@ -37,8 +37,10 @@ def login(request):
     if user is None:
         return Response({'error': 'Credenciales incorrectas'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    user.last_login = timezone.now()
-    user.save(update_fields=['last_login'])
+    primer_login_paciente = user.rol == 'paciente' and user.last_login is None
+    if not primer_login_paciente:
+        user.last_login = timezone.now()
+        user.save(update_fields=['last_login'])
 
     refresh = RefreshToken.for_user(user)
     nombre_completo = user.get_full_name().strip() or user.username
@@ -63,6 +65,7 @@ def login(request):
             'email': user.email,
             'dni': dni,
             'birth_date': fecha_nacimiento,
+            'force_password_change': primer_login_paciente,
         })
 
 @api_view(['POST'])
@@ -198,7 +201,11 @@ def cambiar_contrasena(request):
         return Response({'error': exc.messages[0]}, status=status.HTTP_400_BAD_REQUEST)
 
     request.user.set_password(password)
-    request.user.save(update_fields=['password'])
+    update_fields = ['password']
+    if request.user.last_login is None:
+        request.user.last_login = timezone.now()
+        update_fields.append('last_login')
+    request.user.save(update_fields=update_fields)
 
     return Response({'message': 'Contraseña actualizada correctamente'}, status=status.HTTP_200_OK)
 
@@ -332,9 +339,6 @@ def registro_paciente(request):
             mensaje = exc.messages[0] if exc.messages else 'Los datos del paciente no son válidos'
             return Response({'error': mensaje}, status=status.HTTP_400_BAD_REQUEST)
         paciente.save()
-
-    user.last_login = timezone.now()
-    user.save(update_fields=['last_login'])
 
     return Response(
         {
