@@ -174,7 +174,7 @@ class ProgresoIndividual(QWidget):
             }
         ])
 
-    # ── Acción botón ──────────────────────────────────────────
+    
     def anadir_nota(self):
         self.router.show_publicar_nota_paciente()
 

@@ -32,7 +32,7 @@ class IniciarSesion(QDialog, BeigeBg):
         center_layout = CenterLayout(espacio=40)
         center_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.label = TextoInicio(label="Inicio sesión especialista", tamano=24, upper=True, negrita=True)
+        self.label = TextoInicio(label="Inicio sesión", tamano=24, upper=True, negrita=True)
         self.banner = Banner(self)
         self.nombre_usuario = FormField(label="Nombre de usuario", tamano=14)
         self.contraseña = FormField(label="Contraseña", tamano=14, password=True)

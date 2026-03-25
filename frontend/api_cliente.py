@@ -173,3 +173,20 @@ def crear_nota(paciente_id, contenido, token=None):
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:
         return _network_error_response(exc)
+
+
+def obtener_mi_progreso(token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.get(
+            f"{BASE_URL}/mi-progreso/",
+            headers=headers,
+            timeout=8,
+        )
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)

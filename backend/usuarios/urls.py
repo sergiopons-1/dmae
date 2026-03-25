@@ -7,5 +7,6 @@ urlpatterns = [
     path('registro/', views.registro),
     path('clinicas/', views.clinicas),
     path('registro-paciente/', views.registro_paciente),
+    path('mi-progreso/', views.mi_progreso_paciente),
     path('cambiar-contrasena/', views.cambiar_contrasena),
 ]

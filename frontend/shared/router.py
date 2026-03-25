@@ -253,6 +253,8 @@ class Router(QMainWindow):
         self.stack.setCurrentWidget(self.ajustes_paciente)
 
     def show_mi_progreso_paciente(self):
+        if hasattr(self.mi_progreso_paciente, "_cargar_datos_reales"):
+            self.mi_progreso_paciente._cargar_datos_reales()
         self.stack.setCurrentWidget(self.mi_progreso_paciente)
 
     def logout_patient_session(self):

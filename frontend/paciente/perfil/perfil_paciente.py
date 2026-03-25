@@ -46,7 +46,10 @@ class PerfilPaciente(QWidget):
         center_widget.setStyleSheet("background-color: #FFF7E7;")
         center_widget.setLayout(center_layout)
         main.addWidget(center_widget)
-        
+
+    def set_nombre_paciente(self, nombre: str):
+        self.nombre_paciente = (nombre or "Paciente").strip() or "Paciente"
+        self.sidebar.set_nombre(self.nombre_paciente)
 
     def set_datos_paciente(self, username: str = "", dni: str = "", nombre: str = "", email: str = "", fecha_nacimiento: str = ""):
         nombre_limpio = (nombre or "Paciente").strip() or "Paciente"

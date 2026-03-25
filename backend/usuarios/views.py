@@ -16,6 +16,7 @@ from django.core.validators import validate_email
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from usuarios.models import Usuario, Especialista, Paciente, Clinica
+from juego.models import Progreso, Rehabilitacion
 
 ########################################### ESPECIALISTA ####################################################
 
@@ -220,6 +221,31 @@ def _parse_birth_date(value: str):
 def _generar_codigo(longitud: int = 7) -> str:
     caracteres = string.ascii_uppercase + string.digits
     return ''.join(secrets.choice(caracteres) for _ in range(longitud))
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def mi_progreso_paciente(request):
+    if request.user.rol != 'paciente':
+        return Response({'error': 'Solo pacientes pueden consultar este recurso'}, status=status.HTTP_403_FORBIDDEN)
+
+    progreso = Progreso.objects.filter(paciente=request.user).first()
+    if progreso is None:
+        return Response({'rehabilitaciones': []}, status=status.HTTP_200_OK)
+
+    rehabilitaciones_qs = Rehabilitacion.objects.filter(progreso=progreso).order_by('fechaInicio')
+    rehabilitaciones = [
+        {
+            'Número': str(indice),
+            'Fecha inicio': item.fechaInicio.date().isoformat() if item.fechaInicio else '-',
+            'Fecha fin': item.fechaFin.date().isoformat() if item.fechaFin else '-',
+            'Estado': item.get_estado_display(),
+            'Puntuación': item.puntuacionRehabilitacion,
+        }
+        for indice, item in enumerate(rehabilitaciones_qs, start=1)
+    ]
+
+    return Response({'rehabilitaciones': rehabilitaciones}, status=status.HTTP_200_OK)
 
 
 @api_view(['POST'])
