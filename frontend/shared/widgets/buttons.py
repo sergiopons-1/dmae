@@ -1,7 +1,7 @@
 import sys
 from PyQt6.QtWidgets import (QPushButton)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QGuiApplication
 
 PRIMARY          = "#0E4C66"  
 PRIMARY_HOVER    = "#1878A1"
@@ -104,3 +104,29 @@ class BackButton(QPushButton):
 
         if accion is not None:
             self.clicked.connect(accion)
+
+
+class RectanguloTransparente(QPushButton):
+    def __init__(self, a:int=0, b:int=0, c:int=0, d:int=0, accion=None, parent=None):
+        super().__init__(parent)
+        x = self.obtener_ancho_pantalla()
+        y = self.obtener_alto_pantalla()
+
+        self.setGeometry(int(a * x), int(b * y), int(c * x), int(d * y))
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setStyleSheet("background-color: #FFFFFF; border: none;")
+        if accion is not None:
+            self.clicked.connect(accion)    
+    
+    def obtener_ancho_pantalla(self) -> int:
+        pantalla = QGuiApplication.primaryScreen()
+        if pantalla is None:
+            return 0
+        return pantalla.availableGeometry().width()
+
+
+    def obtener_alto_pantalla(self) -> int:
+        pantalla = QGuiApplication.primaryScreen()
+        if pantalla is None:
+            return 0
+        return pantalla.availableGeometry().height()

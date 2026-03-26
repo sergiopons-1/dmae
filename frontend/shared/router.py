@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PyQt6.QtGui import QIcon
+from PyQt6.QtGui import QIcon, QPixmap
 from PyQt6.QtWidgets import QMainWindow, QStackedWidget
 from auth.initial_window import InitialWindow
 from auth.inicio_sesion import IniciarSesion
@@ -18,6 +18,7 @@ from paciente.inicio_paciente import InicioPaciente
 from paciente.perfil.perfil_paciente import PerfilPaciente
 from paciente.juego.mi_progreso import MiProgreso
 from paciente.ajustes.ajustes import Ajustes 
+from paciente.juego.rehabilitaciones.pantalla_inicial import PantallaPueblo
 
 
 from api_cliente import logout as logout_api
@@ -45,8 +46,13 @@ class Router(QMainWindow):
         self.setWindowTitle("Pueblo a la Vista")
         logo_path = Path(__file__).resolve().parents[1] / "assets" / "images" / "logo.png"
         self.setWindowIcon(QIcon(str(logo_path)))
-        
-        self.resize(800, 600)
+
+        fondo_path = Path(__file__).resolve().parents[1] / "assets" / "images" / "juego" / "inicio_juego.png"
+        fondo = QPixmap(str(fondo_path))
+        if not fondo.isNull():
+            self.resize(fondo.size())
+        else:
+            self.resize(800, 600)
 
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
@@ -72,6 +78,7 @@ class Router(QMainWindow):
         self.perfil_paciente = PerfilPaciente(self)
         self.ajustes_paciente = Ajustes(self)
         self.mi_progreso_paciente = MiProgreso(self)
+        self.pantalla_pueblo = PantallaPueblo(self)
 
         #Añadir al stack
         self.stack.addWidget(self.inicio)
@@ -91,6 +98,7 @@ class Router(QMainWindow):
         self.stack.addWidget(self.perfil_paciente)
         self.stack.addWidget(self.ajustes_paciente)
         self.stack.addWidget(self.mi_progreso_paciente)
+        self.stack.addWidget(self.pantalla_pueblo)
 
         # Pantalla mostrada al ejecutar el programa
         self.stack.setCurrentWidget(self.inicio)
@@ -273,3 +281,7 @@ class Router(QMainWindow):
         else:
             self.logout_specialist_session()
 
+
+    #Juego
+    def show_pantalla_pueblo(self):
+        self.stack.setCurrentWidget(self.pantalla_pueblo)

@@ -99,4 +99,4 @@ class MiProgreso(QWidget):
 
 
     def iniciar_rehabilitacion(self):
-        pass
+        self.router.show_pantalla_pueblo()

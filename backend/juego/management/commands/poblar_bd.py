@@ -21,7 +21,7 @@ CONTENIDOS_NOTAS = [
     'Excelente progreso esta semana.',
     'Revisar calibración del dispositivo en la próxima visita.',
     'El paciente completó todos los edificios sin ayuda.',
-    'Se observa dificultad con el minijuego de memoria.',
+    'Se observa dificultad con el minijuego de campanario.',
     'Sesión suspendida por indisposición del paciente.',
 ]
  
@@ -134,7 +134,7 @@ class Command(BaseCommand):
  
     # Minijuegos
     def crear_minijuegos(self):
-        nombres = ['Globos', 'Memoria', 'Puzzle', 'Laberinto', 'Colores']
+        nombres = ['Biblioteca', 'Huerto', 'Museo', 'Mercadillo', 'Campanario']
         minijuegos = []
         for nombre in nombres:
             obj, created = Minijuego.objects.get_or_create(nombre=nombre)
