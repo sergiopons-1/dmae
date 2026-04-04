@@ -18,7 +18,7 @@ from paciente.inicio_paciente import InicioPaciente
 from paciente.perfil.perfil_paciente import PerfilPaciente
 from paciente.juego.mi_progreso import MiProgreso
 from paciente.ajustes.ajustes import Ajustes 
-from paciente.juego.rehabilitaciones.pantalla_inicial import PantallaPueblo
+from paciente.juego.rehabilitaciones.pantalla_inicial_juego import PantallaPueblo
 
 
 from api_cliente import logout as logout_api

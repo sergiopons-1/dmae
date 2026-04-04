@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QLabel
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt, QRect
-from shared.widgets.buttons import RectanguloTransparente
+from shared.widgets.buttons import RectanguloTransparente, BackButton
 
 
 class PantallaPueblo(QWidget):
@@ -29,6 +29,10 @@ class PantallaPueblo(QWidget):
             self.abrir_biblioteca,
             self,
         )
+
+        self.back_button = BackButton(text="Volver", accion=self.volver, parent=self)
+        self.back_button.setFixedWidth(130)
+        self.back_button.raise_()
         self._ajustar_fondo()
 
     def showEvent(self, event):
@@ -58,6 +62,7 @@ class PantallaPueblo(QWidget):
                 tamano_escalado.height(),
             )
             self._ajustar_boton_biblioteca(imagen_rect)
+            self._ajustar_back_button(imagen_rect)
 
     def _ajustar_boton_biblioteca(self, imagen_rect: QRect):
         self.btn_biblioteca.setGeometry(
@@ -66,6 +71,15 @@ class PantallaPueblo(QWidget):
             int(self._biblioteca_w * imagen_rect.width()),
             int(self._biblioteca_h * imagen_rect.height()),
         )
+
+    def _ajustar_back_button(self, imagen_rect: QRect):
+        margen_x = 20
+        margen_y = 20
+        self.back_button.move(imagen_rect.x() + margen_x, imagen_rect.y() + margen_y)
+        self.back_button.raise_()
+
+    def volver(self):
+        self.router.show_mi_progreso_paciente()
 
     def abrir_biblioteca(self):
         pass
