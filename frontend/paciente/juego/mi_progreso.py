@@ -4,7 +4,7 @@ from shared.widgets.sidebar import SidebarPaciente
 from shared.widgets.text import TextoInicio
 from shared.widgets.buttons import PrimaryButton
 from shared.widgets.tabla import TablaPacientes
-from api_cliente import obtener_mi_progreso
+from api_cliente import obtener_mi_progreso, iniciar_rehabilitacion
 
 BG_COLOR = "#FFF7E7"
 
@@ -99,4 +99,11 @@ class MiProgreso(QWidget):
 
 
     def iniciar_rehabilitacion(self):
-        self.router.show_pantalla_pueblo()
+        token = getattr(self.router, "auth_token", None)
+        if not token:
+            return
+
+        status_code, _ = iniciar_rehabilitacion(token)
+        if status_code == 201:
+            self._cargar_datos_reales()
+            self.router.show_pantalla_pueblo()

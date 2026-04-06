@@ -48,7 +48,7 @@ class PantallaFinRehabilitacion(QWidget):
 
 		self._panel_info = QFrame()
 		self._panel_info.setStyleSheet(
-			"background-color: #E5E5E5; border: 1px solid #2B6B8C;"
+			"background-color: #FFFFFF;"
 		)
 		panel_layout = QVBoxLayout(self._panel_info)
 		panel_layout.setContentsMargins(22, 22, 22, 22)

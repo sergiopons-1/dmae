@@ -121,7 +121,8 @@ class BibliotecaWidget(QWidget):
         )
  
     def _on_juego_completado(self, puntuacion: int):
-        self._finalizar_minijuego()
+        if self._overlay_completado is None:
+            self._mostrar_overlay_completado()
         self.juego_completado.emit(puntuacion)
 
     def _on_fallo_color(self):
@@ -134,6 +135,12 @@ class BibliotecaWidget(QWidget):
         if self._minijuego_terminado:
             return
         self._minijuego_terminado = True
+
+        if self._overlay_completado is not None:
+            self._overlay_completado.setParent(None)
+            self._overlay_completado.deleteLater()
+            self._overlay_completado = None
+
         self.minijuego_finalizado.emit(self._libros_colocados)
  
     def _mostrar_overlay_completado(self):

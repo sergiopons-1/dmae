@@ -254,6 +254,33 @@ def mi_progreso_paciente(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+def iniciar_rehabilitacion_paciente(request):
+    if request.user.rol != 'paciente':
+        return Response(
+            {'error': 'Solo pacientes pueden iniciar una rehabilitación'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    progreso, _ = Progreso.objects.get_or_create(paciente=request.user)
+    rehabilitacion = Rehabilitacion.objects.create(
+        progreso=progreso,
+        estado=Rehabilitacion.EstadoRehabilitacion.EN_CURSO,
+        puntuacionRehabilitacion=0,
+    )
+
+    return Response(
+        {
+            'idRehabilitacion': rehabilitacion.idRehabilitacion,
+            'estado': rehabilitacion.estado,
+            'fechaInicio': rehabilitacion.fechaInicio.isoformat() if rehabilitacion.fechaInicio else None,
+            'puntuacionRehabilitacion': rehabilitacion.puntuacionRehabilitacion,
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def registro_paciente(request):
     username = (request.data.get('username') or '').strip()
     dni = (request.data.get('dni') or '').strip()

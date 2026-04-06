@@ -190,3 +190,20 @@ def obtener_mi_progreso(token=None):
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:
         return _network_error_response(exc)
+
+
+def iniciar_rehabilitacion(token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.post(
+            f"{BASE_URL}/iniciar-rehabilitacion/",
+            headers=headers,
+            timeout=8,
+        )
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
