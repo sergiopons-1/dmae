@@ -82,4 +82,5 @@ class PantallaPueblo(QWidget):
         self.router.show_mi_progreso_paciente()
 
     def abrir_biblioteca(self):
-        pass
+        if hasattr(self.router, "show_biblioteca"):
+            self.router.show_biblioteca()

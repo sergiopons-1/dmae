@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from PyQt6.QtGui import QIcon, QPixmap
-from PyQt6.QtWidgets import QMainWindow, QStackedWidget
+from PyQt6.QtWidgets import QMainWindow, QStackedWidget, QSizePolicy
 from auth.initial_window import InitialWindow
 from auth.inicio_sesion import IniciarSesion
 from auth.registro import Registro
@@ -19,6 +19,8 @@ from paciente.perfil.perfil_paciente import PerfilPaciente
 from paciente.juego.mi_progreso import MiProgreso
 from paciente.ajustes.ajustes import Ajustes 
 from paciente.juego.rehabilitaciones.pantalla_inicial_juego import PantallaPueblo
+from paciente.juego.rehabilitaciones.pantalla_fin_rehabilitacion import PantallaFinRehabilitacion
+from shared.widgets.juego.biblioteca.biblioteca import BibliotecaWidget
 
 
 from api_cliente import logout as logout_api
@@ -55,6 +57,10 @@ class Router(QMainWindow):
             self.resize(800, 600)
 
         self.stack = QStackedWidget()
+        self.stack.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         self.setCentralWidget(self.stack)
 
         #Crear pantalla
@@ -79,6 +85,11 @@ class Router(QMainWindow):
         self.ajustes_paciente = Ajustes(self)
         self.mi_progreso_paciente = MiProgreso(self)
         self.pantalla_pueblo = PantallaPueblo(self)
+        self.pantalla_biblioteca = BibliotecaWidget(self)
+        self.pantalla_biblioteca.minijuego_finalizado.connect(self.show_pantalla_fin_rehabilitacion)
+        self.pantalla_fin_rehabilitacion = PantallaFinRehabilitacion(self)
+        self.pantalla_fin_rehabilitacion.salir_del_edificio.connect(self.show_pantalla_pueblo)
+        self.pantalla_fin_rehabilitacion.volver_a_jugar.connect(self.show_biblioteca)
 
         #Añadir al stack
         self.stack.addWidget(self.inicio)
@@ -99,6 +110,8 @@ class Router(QMainWindow):
         self.stack.addWidget(self.ajustes_paciente)
         self.stack.addWidget(self.mi_progreso_paciente)
         self.stack.addWidget(self.pantalla_pueblo)
+        self.stack.addWidget(self.pantalla_biblioteca)
+        self.stack.addWidget(self.pantalla_fin_rehabilitacion)
 
         # Pantalla mostrada al ejecutar el programa
         self.stack.setCurrentWidget(self.inicio)
@@ -285,3 +298,13 @@ class Router(QMainWindow):
     #Juego
     def show_pantalla_pueblo(self):
         self.stack.setCurrentWidget(self.pantalla_pueblo)
+
+    def show_biblioteca(self):
+        if hasattr(self.pantalla_biblioteca, "reiniciar_partida"):
+            self.pantalla_biblioteca.reiniciar_partida()
+        self.stack.setCurrentWidget(self.pantalla_biblioteca)
+
+    def show_pantalla_fin_rehabilitacion(self, libros_colocados: int):
+        if hasattr(self.pantalla_fin_rehabilitacion, "set_resultado"):
+            self.pantalla_fin_rehabilitacion.set_resultado(libros_colocados)
+        self.stack.setCurrentWidget(self.pantalla_fin_rehabilitacion)

@@ -114,7 +114,7 @@ class RectanguloTransparente(QPushButton):
 
         self.setGeometry(int(a * x), int(b * y), int(c * x), int(d * y))
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setStyleSheet("background-color: #FFFFFF; border: none;")
+        self.setStyleSheet("background-color: transparent; border: none;")
         if accion is not None:
             self.clicked.connect(accion)    
     
