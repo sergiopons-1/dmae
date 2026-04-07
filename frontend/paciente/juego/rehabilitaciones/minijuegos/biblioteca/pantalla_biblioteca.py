@@ -6,10 +6,10 @@ from shared.widgets.juego.biblioteca.libro import LibroWidget
 from shared.widgets.juego.biblioteca.estanteria import EstanteriaWidget
  
 ESTANTERIAS_CONFIG = [
-    ("rojo",     2, QRect(60,  20, 230, 140)),
-    ("azul",     2, QRect(310, 20, 230, 140)),
-    ("verde",    2, QRect(60,  175, 230, 140)), 
-    ("amarillo", 2, QRect(310, 175, 230, 140)),  
+    ("rojo",     2, QRect(60,  20, 230, 110)),
+    ("azul",     2, QRect(310, 20, 230, 110)),
+    ("verde",    2, QRect(60,  155, 230, 100)), 
+    ("amarillo", 2, QRect(310, 155, 230, 100)),  
 ]
 
 ESTANTERIAS_VISUALES_CONFIG = {
