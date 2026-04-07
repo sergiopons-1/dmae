@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QLabel
-from PyQt6.QtCore import Qt, QPoint, QSize, QRect, pyqtSignal
-from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtCore import Qt, QPoint, QSize, QRect, pyqtSignal, QTimer
+from PyQt6.QtGui import QImage, QPixmap, QCursor
  
  
 class LibroWidget(QLabel):
@@ -24,8 +24,14 @@ class LibroWidget(QLabel):
         self.pos_inicial = pos_inicial     
         self.colocado = False               
         self._arrastrando = False
+        self._movido_en_arrastre = False
+        self._modo_click_activo = False
         self._offset = QPoint()            
         self._mostrando_seleccionado = False
+
+        self._timer_seguimiento = QTimer(self)
+        self._timer_seguimiento.setInterval(16)
+        self._timer_seguimiento.timeout.connect(self._seguir_raton)
  
         # Carga de imágenes
         self._img_normal_base = self._cargar_pixmap_base(
@@ -108,27 +114,59 @@ class LibroWidget(QLabel):
  
     def marcar_colocado(self):
         self.colocado = True
+        self._desactivar_modo_click(restaurar=False)
         self.hide()  
  
     def volver_origen(self):
+        self._desactivar_modo_click(restaurar=False)
         parent = self.parentWidget()
         if parent is not None and hasattr(parent, "_escalar_punto"):
             self.move(parent._escalar_punto(self.pos_inicial))
         else:
             self.move(self.pos_inicial)
         self._set_normal()
+
+    def _activar_modo_click(self):
+        self._modo_click_activo = True
+        self._set_seleccionado()
+        self.raise_()
+        self._timer_seguimiento.start()
+
+    def _desactivar_modo_click(self, restaurar: bool = True):
+        self._modo_click_activo = False
+        if self._timer_seguimiento.isActive():
+            self._timer_seguimiento.stop()
+        if restaurar:
+            self._set_normal()
+
+    def _seguir_raton(self):
+        if not self._modo_click_activo or self.colocado:
+            return
+        parent = self.parentWidget()
+        if parent is None:
+            return
+        cursor_local = parent.mapFromGlobal(QCursor.pos())
+        self.move(cursor_local - self._offset)
  
     def mousePressEvent(self, event):
         if self.colocado:
             return
         if event.button() == Qt.MouseButton.LeftButton:
+            if self._modo_click_activo:
+                self._desactivar_modo_click(restaurar=True)
+                pos_global = event.globalPosition().toPoint()
+                self.soltado.emit(self, pos_global)
+                return
+
             self._arrastrando = True
+            self._movido_en_arrastre = False
             self._offset = event.position().toPoint()
             self._set_seleccionado()
             self.raise_()
  
     def mouseMoveEvent(self, event):
         if self._arrastrando:
+            self._movido_en_arrastre = True
             nueva_pos = self.mapToParent(
                 event.position().toPoint() - self._offset
             )
@@ -137,7 +175,10 @@ class LibroWidget(QLabel):
     def mouseReleaseEvent(self, event):
         if self._arrastrando and event.button() == Qt.MouseButton.LeftButton:
             self._arrastrando = False
-            self._set_normal()
-            pos_global = self.mapToGlobal(event.position().toPoint())
-            self.soltado.emit(self, pos_global)
+            if self._movido_en_arrastre:
+                self._set_normal()
+                pos_global = self.mapToGlobal(event.position().toPoint())
+                self.soltado.emit(self, pos_global)
+            else:
+                self._activar_modo_click()
  
