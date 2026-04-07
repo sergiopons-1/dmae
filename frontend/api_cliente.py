@@ -3,6 +3,18 @@ import requests
 BASE_URL = "http://127.0.0.1:8000/api/usuarios"
 BASE_URL_API = "http://127.0.0.1:8000/api"
 
+_AUTH_EXPIRED_HANDLER = None
+
+
+def set_auth_expired_handler(handler):
+    global _AUTH_EXPIRED_HANDLER
+    _AUTH_EXPIRED_HANDLER = handler
+
+
+def _notify_auth_expired():
+    if callable(_AUTH_EXPIRED_HANDLER):
+        _AUTH_EXPIRED_HANDLER()
+
 
 def _network_error_response(exc):
     if isinstance(exc, requests.exceptions.Timeout):
@@ -96,6 +108,8 @@ def obtener_pacientes_clinica(clinic_id, token=None):
             headers=headers,
             timeout=5,
         )
+        if r.status_code == 401:
+            _notify_auth_expired()
         payload = _normalize_error_payload(r.status_code, r.json())
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:
@@ -116,6 +130,8 @@ def singin_paciente(username, dni, email, first_name, last_name, birth_date, tok
             "last_name": last_name,
             "birth_date": birth_date,
         }, headers=headers, timeout=10)
+        if r.status_code == 401:
+            _notify_auth_expired()
         payload = _normalize_error_payload(r.status_code, r.json())
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:
@@ -134,6 +150,8 @@ def cambiar_contrasena_especialista(password, token=None):
             headers=headers,
             timeout=10,
         )
+        if r.status_code == 401:
+            _notify_auth_expired()
         payload = _normalize_error_payload(r.status_code, r.json())
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:
@@ -151,6 +169,8 @@ def obtener_progreso_individual(paciente_id, token=None):
             headers=headers,
             timeout=8,
         )
+        if r.status_code == 401:
+            _notify_auth_expired()
         payload = _normalize_error_payload(r.status_code, r.json())
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:
@@ -169,6 +189,8 @@ def crear_nota(paciente_id, contenido, token=None):
             headers=headers,
             timeout=10,
         )
+        if r.status_code == 401:
+            _notify_auth_expired()
         payload = _normalize_error_payload(r.status_code, r.json())
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:
@@ -186,6 +208,8 @@ def obtener_mi_progreso(token=None):
             headers=headers,
             timeout=8,
         )
+        if r.status_code == 401:
+            _notify_auth_expired()
         payload = _normalize_error_payload(r.status_code, r.json())
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:
@@ -203,6 +227,51 @@ def iniciar_rehabilitacion(token=None):
             headers=headers,
             timeout=8,
         )
+        if r.status_code == 401:
+            _notify_auth_expired()
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
+
+
+def obtener_detalle_rehabilitacion(id_rehabilitacion, token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.get(
+            f"{BASE_URL}/rehabilitacion/{id_rehabilitacion}/detalle/",
+            headers=headers,
+            timeout=8,
+        )
+        if r.status_code == 401:
+            _notify_auth_expired()
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
+
+
+def registrar_puntuacion_minijuego(edificio, puntuacion, token=None, id_rehabilitacion=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        body = {"edificio": edificio, "puntuacion": puntuacion}
+        if id_rehabilitacion is not None:
+            body["idRehabilitacion"] = id_rehabilitacion
+
+        r = requests.post(
+            f"{BASE_URL}/registrar-puntuacion-minijuego/",
+            json=body,
+            headers=headers,
+            timeout=8,
+        )
+        if r.status_code == 401:
+            _notify_auth_expired()
         payload = _normalize_error_payload(r.status_code, r.json())
         return r.status_code, payload
     except requests.exceptions.RequestException as exc:

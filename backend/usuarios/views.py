@@ -16,7 +16,7 @@ from django.core.validators import validate_email
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from usuarios.models import Usuario, Especialista, Paciente, Clinica
-from juego.models import Progreso, Rehabilitacion
+from juego.models import Progreso, Rehabilitacion, Edificio, Minijuego
 
 ########################################### ESPECIALISTA ####################################################
 
@@ -227,6 +227,33 @@ def _generar_codigo(longitud: int = 7) -> str:
     return ''.join(secrets.choice(caracteres) for _ in range(longitud))
 
 
+NOMBRES_EDIFICIOS_REHABILITACION = [
+    Edificio.NombreEdificio.BIBLIOTECA,
+    Edificio.NombreEdificio.HUERTO,
+    Edificio.NombreEdificio.MUSEO,
+    Edificio.NombreEdificio.MERCADILLO,
+    Edificio.NombreEdificio.CAMPANARIO,
+]
+
+
+def _estado_edificio_por_puntuacion(puntuacion: int) -> str:
+    if puntuacion <= 0:
+        return Edificio.EstadoEdificio.BLOQUEADO
+    if puntuacion >= 2:
+        return Edificio.EstadoEdificio.RESTAURADO
+    return Edificio.EstadoEdificio.EN_CURSO
+
+
+def _siguiente_edificio(edificios: list[dict]) -> str | None:
+    for item in edificios:
+        if item.get('estado') == Edificio.EstadoEdificio.EN_CURSO:
+            return item.get('nombre')
+    for item in edificios:
+        if item.get('estado') == Edificio.EstadoEdificio.BLOQUEADO:
+            return item.get('nombre')
+    return None
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def mi_progreso_paciente(request):
@@ -240,10 +267,12 @@ def mi_progreso_paciente(request):
     rehabilitaciones_qs = Rehabilitacion.objects.filter(progreso=progreso).order_by('fechaInicio')
     rehabilitaciones = [
         {
+            'idRehabilitacion': item.idRehabilitacion,
             'Número': str(indice),
             'Fecha inicio': item.fechaInicio.date().isoformat() if item.fechaInicio else '-',
             'Fecha fin': item.fechaFin.date().isoformat() if item.fechaFin else '-',
             'Estado': item.get_estado_display(),
+            'estado_codigo': item.estado,
             'Puntuación': item.puntuacionRehabilitacion,
         }
         for indice, item in enumerate(rehabilitaciones_qs, start=1)
@@ -262,11 +291,26 @@ def iniciar_rehabilitacion_paciente(request):
         )
 
     progreso, _ = Progreso.objects.get_or_create(paciente=request.user)
-    rehabilitacion = Rehabilitacion.objects.create(
-        progreso=progreso,
-        estado=Rehabilitacion.EstadoRehabilitacion.EN_CURSO,
-        puntuacionRehabilitacion=0,
-    )
+    with transaction.atomic():
+        rehabilitacion = Rehabilitacion.objects.create(
+            progreso=progreso,
+            estado=Rehabilitacion.EstadoRehabilitacion.EN_CURSO,
+            puntuacionRehabilitacion=0,
+        )
+
+        minijuegos_por_nombre = {
+            m.nombre.strip().lower(): m
+            for m in Minijuego.objects.all()
+        }
+
+        for nombre_edificio in NOMBRES_EDIFICIOS_REHABILITACION:
+            Edificio.objects.create(
+                rehabilitacion=rehabilitacion,
+                minijuego=minijuegos_por_nombre.get(str(nombre_edificio).strip().lower()),
+                nombre=nombre_edificio,
+                estadoEdificio=Edificio.EstadoEdificio.BLOQUEADO,
+                puntuacionEdificio=0,
+            )
 
     return Response(
         {
@@ -276,6 +320,149 @@ def iniciar_rehabilitacion_paciente(request):
             'puntuacionRehabilitacion': rehabilitacion.puntuacionRehabilitacion,
         },
         status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def registrar_puntuacion_minijuego_paciente(request):
+    if request.user.rol != 'paciente':
+        return Response(
+            {'error': 'Solo pacientes pueden registrar puntuaciones'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    nombre_edificio = (request.data.get('edificio') or '').strip().lower()
+    puntuacion = request.data.get('puntuacion')
+    id_rehabilitacion = request.data.get('idRehabilitacion')
+
+    if not nombre_edificio:
+        return Response({'error': 'El campo edificio es obligatorio'}, status=status.HTTP_400_BAD_REQUEST)
+
+    edificios_validos = {str(valor) for valor, _ in Edificio.NombreEdificio.choices}
+    if nombre_edificio not in edificios_validos:
+        return Response({'error': 'El edificio indicado no es válido'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        puntuacion = int(puntuacion)
+    except (TypeError, ValueError):
+        return Response({'error': 'La puntuación debe ser un número entero'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if puntuacion < 0 or puntuacion > 3:
+        return Response({'error': 'La puntuación debe estar entre 0 y 3'}, status=status.HTTP_400_BAD_REQUEST)
+
+    progreso = Progreso.objects.filter(paciente=request.user).first()
+    if progreso is None:
+        return Response({'error': 'No existe progreso para este paciente'}, status=status.HTTP_400_BAD_REQUEST)
+
+    rehabilitaciones_en_curso = Rehabilitacion.objects.filter(
+        progreso=progreso,
+        estado=Rehabilitacion.EstadoRehabilitacion.EN_CURSO,
+    )
+
+    if id_rehabilitacion is not None:
+        try:
+            id_rehabilitacion = int(id_rehabilitacion)
+        except (TypeError, ValueError):
+            return Response({'error': 'idRehabilitacion no es válido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        rehabilitacion = rehabilitaciones_en_curso.filter(idRehabilitacion=id_rehabilitacion).first()
+    else:
+        rehabilitacion = rehabilitaciones_en_curso.order_by('-fechaInicio', '-idRehabilitacion').first()
+
+    if rehabilitacion is None:
+        return Response({'error': 'No hay una rehabilitación en curso'}, status=status.HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        edificio = (
+            Edificio.objects
+            .select_for_update()
+            .filter(rehabilitacion=rehabilitacion, nombre=nombre_edificio)
+            .first()
+        )
+
+        if edificio is None:
+            minijuego = Minijuego.objects.filter(nombre__iexact=nombre_edificio).first()
+            edificio = Edificio.objects.create(
+                rehabilitacion=rehabilitacion,
+                minijuego=minijuego,
+                nombre=nombre_edificio,
+                estadoEdificio=Edificio.EstadoEdificio.BLOQUEADO,
+                puntuacionEdificio=0,
+            )
+
+        edificio.puntuacionEdificio = puntuacion
+        edificio.estadoEdificio = _estado_edificio_por_puntuacion(puntuacion)
+        edificio.save(update_fields=['puntuacionEdificio', 'estadoEdificio'])
+
+        puntuacion_total = sum(
+            Edificio.objects.filter(rehabilitacion=rehabilitacion)
+            .values_list('puntuacionEdificio', flat=True)
+        )
+        rehabilitacion.puntuacionRehabilitacion = puntuacion_total
+        rehabilitacion.save(update_fields=['puntuacionRehabilitacion'])
+
+    return Response(
+        {
+            'idRehabilitacion': rehabilitacion.idRehabilitacion,
+            'edificio': nombre_edificio,
+            'puntuacionEdificio': edificio.puntuacionEdificio,
+            'estadoEdificio': edificio.estadoEdificio,
+            'puntuacionRehabilitacion': rehabilitacion.puntuacionRehabilitacion,
+        },
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def detalle_rehabilitacion_paciente(request, id_rehabilitacion):
+    if request.user.rol != 'paciente':
+        return Response({'error': 'Solo pacientes pueden consultar este recurso'}, status=status.HTTP_403_FORBIDDEN)
+
+    progreso = Progreso.objects.filter(paciente=request.user).first()
+    if progreso is None:
+        return Response({'error': 'No existe progreso para este paciente'}, status=status.HTTP_400_BAD_REQUEST)
+
+    rehabilitacion = Rehabilitacion.objects.filter(
+        progreso=progreso,
+        idRehabilitacion=id_rehabilitacion,
+    ).first()
+    if rehabilitacion is None:
+        return Response({'error': 'Rehabilitación no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+
+    if rehabilitacion.estado != Rehabilitacion.EstadoRehabilitacion.EN_CURSO:
+        return Response({'error': 'Solo se puede continuar rehabilitaciones en curso'}, status=status.HTTP_400_BAD_REQUEST)
+
+    edificios_map = {
+        e.nombre: e
+        for e in Edificio.objects.filter(rehabilitacion=rehabilitacion)
+    }
+    edificios = []
+    for nombre in NOMBRES_EDIFICIOS_REHABILITACION:
+        e = edificios_map.get(nombre)
+        if e is None:
+            edificios.append({
+                'nombre': nombre,
+                'estado': Edificio.EstadoEdificio.BLOQUEADO,
+                'puntuacion': 0,
+            })
+            continue
+        edificios.append({
+            'nombre': e.nombre,
+            'estado': e.estadoEdificio,
+            'puntuacion': e.puntuacionEdificio,
+        })
+
+    return Response(
+        {
+            'idRehabilitacion': rehabilitacion.idRehabilitacion,
+            'estado': rehabilitacion.estado,
+            'puntuacionRehabilitacion': rehabilitacion.puntuacionRehabilitacion,
+            'edificios': edificios,
+            'siguienteEdificio': _siguiente_edificio(edificios),
+        },
+        status=status.HTTP_200_OK,
     )
 
 

@@ -42,10 +42,28 @@ class MiProgreso(QWidget):
             min_height=420,
             headers=["Número", "Fecha inicio", "Fecha fin", "Estado", "Puntuación"],
         )
+        self.tabla_progreso.fila_clickada.connect(self._on_fila_rehabilitacion_click)
         content_layout.addWidget(self.tabla_progreso)
 
         main.addWidget(content, stretch=1)
         self._actualizar_tabla()
+
+    def _on_fila_rehabilitacion_click(self, fila: dict):
+        if not isinstance(fila, dict):
+            return
+
+        estado_codigo = str(fila.get("estado_codigo", "")).strip().lower()
+        if estado_codigo != "en_curso":
+            return
+
+        id_rehabilitacion = fila.get("idRehabilitacion")
+        try:
+            id_rehabilitacion = int(id_rehabilitacion)
+        except (TypeError, ValueError):
+            return
+
+        if hasattr(self.router, "continuar_rehabilitacion"):
+            self.router.continuar_rehabilitacion(id_rehabilitacion)
 
 
     def cargar_datos(self, datos: list):
@@ -103,7 +121,9 @@ class MiProgreso(QWidget):
         if not token:
             return
 
-        status_code, _ = iniciar_rehabilitacion(token)
+        status_code, data = iniciar_rehabilitacion(token)
         if status_code == 201:
+            if isinstance(data, dict) and hasattr(self.router, "set_rehabilitacion_activa"):
+                self.router.set_rehabilitacion_activa(data.get("idRehabilitacion"))
             self._cargar_datos_reales()
             self.router.show_pantalla_pueblo()

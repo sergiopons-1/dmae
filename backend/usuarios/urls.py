@@ -9,5 +9,7 @@ urlpatterns = [
     path('registro-paciente/', views.registro_paciente),
     path('mi-progreso/', views.mi_progreso_paciente),
     path('iniciar-rehabilitacion/', views.iniciar_rehabilitacion_paciente),
+    path('registrar-puntuacion-minijuego/', views.registrar_puntuacion_minijuego_paciente),
+    path('rehabilitacion/<int:id_rehabilitacion>/detalle/', views.detalle_rehabilitacion_paciente),
     path('cambiar-contrasena/', views.cambiar_contrasena),
 ]

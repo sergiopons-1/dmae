@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import QMainWindow, QStackedWidget, QSizePolicy
 from auth.initial_window import InitialWindow
 from auth.inicio_sesion import IniciarSesion
 from auth.registro import Registro
+from auth.no_inicio_sesion import NoInicioSesion
 from especialista.inicio_especialista import InicioEspecialista
 from especialista.perfil.perfil_especialista import PerfilEspecialista
 from auth.cambio_contraseña import CambiarContraseña
@@ -20,10 +21,16 @@ from paciente.juego.mi_progreso import MiProgreso
 from paciente.ajustes.ajustes import Ajustes 
 from paciente.juego.rehabilitaciones.pantalla_inicial_juego import PantallaPueblo
 from paciente.juego.rehabilitaciones.pantalla_fin_rehabilitacion import PantallaFinRehabilitacion
+from paciente.juego.rehabilitaciones.minijuegos.huerto.inicio_huerto import BibliotecaCompletada
 from shared.widgets.juego.biblioteca.biblioteca import BibliotecaWidget
 
 
-from api_cliente import logout as logout_api
+from api_cliente import (
+    logout as logout_api,
+    registrar_puntuacion_minijuego,
+    obtener_detalle_rehabilitacion,
+    set_auth_expired_handler,
+)
 
 
 
@@ -44,6 +51,8 @@ class Router(QMainWindow):
         self.paciente_nombre = "Paciente"
         self.paciente_username = ""
         self.paciente_email = ""
+        self.rehabilitacion_activa_id = None
+        self.rehabilitacion_activa_detalle = {}
 
         self.setWindowTitle("Pueblo a la Vista")
         logo_path = Path(__file__).resolve().parents[1] / "assets" / "images" / "logo.png"
@@ -68,6 +77,7 @@ class Router(QMainWindow):
         self.inicio = InitialWindow(self)
         self.iniciar_sesion = IniciarSesion(self)
         self.registro = Registro(self)
+        self.no_inicio_sesion = NoInicioSesion(self)
 
         #Especialista
         self.inicio_especialista = InicioEspecialista(self)
@@ -88,13 +98,15 @@ class Router(QMainWindow):
         self.pantalla_biblioteca = BibliotecaWidget(self)
         self.pantalla_biblioteca.minijuego_finalizado.connect(self.show_pantalla_fin_rehabilitacion)
         self.pantalla_fin_rehabilitacion = PantallaFinRehabilitacion(self)
-        self.pantalla_fin_rehabilitacion.salir_del_edificio.connect(self.show_pantalla_pueblo)
-        self.pantalla_fin_rehabilitacion.volver_a_jugar.connect(self.show_biblioteca)
+        self.inicio_huerto = BibliotecaCompletada(self)
+        self.pantalla_fin_rehabilitacion.salir_del_edificio.connect(self._on_fin_salir_del_edificio)
+        self.pantalla_fin_rehabilitacion.volver_a_jugar.connect(self._on_fin_volver_a_jugar)
 
         #Añadir al stack
         self.stack.addWidget(self.inicio)
         self.stack.addWidget(self.iniciar_sesion)
         self.stack.addWidget(self.registro)
+        self.stack.addWidget(self.no_inicio_sesion)
 
         self.stack.addWidget(self.inicio_especialista)
         self.stack.addWidget(self.perfil_especialista)  
@@ -112,6 +124,9 @@ class Router(QMainWindow):
         self.stack.addWidget(self.pantalla_pueblo)
         self.stack.addWidget(self.pantalla_biblioteca)
         self.stack.addWidget(self.pantalla_fin_rehabilitacion)
+        self.stack.addWidget(self.inicio_huerto)
+
+        set_auth_expired_handler(self.show_no_inicio_sesion)
 
         # Pantalla mostrada al ejecutar el programa
         self.stack.setCurrentWidget(self.inicio)
@@ -199,6 +214,8 @@ class Router(QMainWindow):
         self.paciente_dni = ""
         self.paciente_email = ""
         self.birth_date = ""
+        self.rehabilitacion_activa_id = None
+        self.rehabilitacion_activa_detalle = {}
         self._sync_patient_name()
 
     def logout_specialist_session(self):
@@ -218,6 +235,13 @@ class Router(QMainWindow):
         elif self.user_rol == 'paciente':
             self.clear_patient_session()
         self.stack.setCurrentWidget(self.inicio)
+
+    def show_no_inicio_sesion(self):
+        if self.user_rol == 'especialista':
+            self.clear_specialist_session()
+        elif self.user_rol == 'paciente':
+            self.clear_patient_session()
+        self.stack.setCurrentWidget(self.no_inicio_sesion)
 
     def show_login(self):
         self.stack.setCurrentWidget(self.iniciar_sesion)
@@ -299,12 +323,90 @@ class Router(QMainWindow):
     def show_pantalla_pueblo(self):
         self.stack.setCurrentWidget(self.pantalla_pueblo)
 
+    def set_rehabilitacion_activa(self, id_rehabilitacion: int | None):
+        self.rehabilitacion_activa_id = id_rehabilitacion
+
+    def continuar_rehabilitacion(self, id_rehabilitacion: int):
+        if not self.auth_token:
+            return
+
+        status_code, data = obtener_detalle_rehabilitacion(id_rehabilitacion, self.auth_token)
+        if status_code != 200 or not isinstance(data, dict):
+            return
+
+        self.rehabilitacion_activa_id = id_rehabilitacion
+        self.rehabilitacion_activa_detalle = data
+
+        puntuacion_biblioteca = self._puntuacion_biblioteca_en_rehabilitacion_activa()
+        if puntuacion_biblioteca >= 2:
+            self.show_inicio_huerto(puntuacion_biblioteca)
+            return
+
+        self.stack.setCurrentWidget(self.pantalla_pueblo)
+
     def show_biblioteca(self):
         if hasattr(self.pantalla_biblioteca, "reiniciar_partida"):
             self.pantalla_biblioteca.reiniciar_partida()
         self.stack.setCurrentWidget(self.pantalla_biblioteca)
 
+    def show_inicio_huerto(self, puntuacion_biblioteca: int = 0):
+        if hasattr(self.inicio_huerto, "set_puntuacion_biblioteca"):
+            self.inicio_huerto.set_puntuacion_biblioteca(puntuacion_biblioteca)
+        self.stack.setCurrentWidget(self.inicio_huerto)
+
+    def _puntuacion_biblioteca_en_rehabilitacion_activa(self) -> int:
+        detalle = self.rehabilitacion_activa_detalle
+        if not isinstance(detalle, dict):
+            return 0
+
+        edificios = detalle.get("edificios", [])
+        if not isinstance(edificios, list):
+            return 0
+
+        for edificio in edificios:
+            if not isinstance(edificio, dict):
+                continue
+            if str(edificio.get("nombre", "")).strip().lower() != "biblioteca":
+                continue
+            try:
+                return int(edificio.get("puntuacion", 0))
+            except (TypeError, ValueError):
+                return 0
+        return 0
+
+    def _on_fin_salir_del_edificio(self):
+        if hasattr(self.pantalla_fin_rehabilitacion, "ha_superado") and self.pantalla_fin_rehabilitacion.ha_superado():
+            puntos = self.pantalla_fin_rehabilitacion.puntos_finales() if hasattr(self.pantalla_fin_rehabilitacion, "puntos_finales") else 0
+            self.show_inicio_huerto(puntos)
+            return
+        self.show_pantalla_pueblo()
+
+    def _on_fin_volver_a_jugar(self):
+        if hasattr(self.pantalla_fin_rehabilitacion, "ha_superado") and self.pantalla_fin_rehabilitacion.ha_superado():
+            puntos = self.pantalla_fin_rehabilitacion.puntos_finales() if hasattr(self.pantalla_fin_rehabilitacion, "puntos_finales") else 0
+            self.show_inicio_huerto(puntos)
+            return
+        self.show_biblioteca()
+
     def show_pantalla_fin_rehabilitacion(self, libros_colocados: int):
+        # Biblioteca puntua de 0 a 3, que coincide con puntuacionEdificio.
+        if libros_colocados <= 1:
+            puntos_minijuego = 0
+        elif libros_colocados <= 4:
+            puntos_minijuego = 1
+        elif libros_colocados <= 7:
+            puntos_minijuego = 2
+        else:
+            puntos_minijuego = 3
+
+        if self.auth_token:
+            registrar_puntuacion_minijuego(
+                edificio="biblioteca",
+                puntuacion=puntos_minijuego,
+                token=self.auth_token,
+                id_rehabilitacion=self.rehabilitacion_activa_id,
+            )
+
         if hasattr(self.pantalla_fin_rehabilitacion, "set_resultado"):
             self.pantalla_fin_rehabilitacion.set_resultado(libros_colocados)
         self.stack.setCurrentWidget(self.pantalla_fin_rehabilitacion)
