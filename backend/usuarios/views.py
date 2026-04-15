@@ -17,6 +17,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from usuarios.models import Usuario, Especialista, Paciente, Clinica
 from juego.models import Progreso, Rehabilitacion, Edificio, Minijuego
+from eye_tracking.models import AjustesPaciente
 
 ########################################### ESPECIALISTA ####################################################
 
@@ -48,6 +49,7 @@ def login(request):
         return Response({
         'token': str(refresh.access_token),
         'refresh': str(refresh),
+        'id': user.id,
         'rol': user.rol,
         'nombre': nombre_completo,
         'email': user.email,
@@ -60,6 +62,7 @@ def login(request):
         return Response({
             'token': str(refresh.access_token),
             'refresh': str(refresh),
+            'id': paciente.id if paciente else user.id,
             'rol': user.rol,
             'nombre': nombre_completo,
             'email': user.email,
@@ -237,8 +240,6 @@ NOMBRES_EDIFICIOS_REHABILITACION = [
 
 
 def _estado_edificio_por_puntuacion(puntuacion: int) -> str:
-    if puntuacion <= 0:
-        return Edificio.EstadoEdificio.BLOQUEADO
     if puntuacion >= 2:
         return Edificio.EstadoEdificio.RESTAURADO
     return Edificio.EstadoEdificio.EN_CURSO
@@ -252,6 +253,78 @@ def _siguiente_edificio(edificios: list[dict]) -> str | None:
         if item.get('estado') == Edificio.EstadoEdificio.BLOQUEADO:
             return item.get('nombre')
     return None
+
+
+def _minijuegos_por_nombre() -> dict[str, Minijuego]:
+    return {
+        m.nombre.strip().lower(): m
+        for m in Minijuego.objects.all()
+    }
+
+
+def _asegurar_edificios_rehabilitacion(rehabilitacion: Rehabilitacion) -> list[Edificio]:
+    minijuegos = _minijuegos_por_nombre()
+    existentes = {
+        e.nombre: e
+        for e in Edificio.objects.filter(rehabilitacion=rehabilitacion)
+    }
+
+    for nombre_edificio in NOMBRES_EDIFICIOS_REHABILITACION:
+        if nombre_edificio in existentes:
+            continue
+        existentes[nombre_edificio] = Edificio.objects.create(
+            rehabilitacion=rehabilitacion,
+            minijuego=minijuegos.get(str(nombre_edificio).strip().lower()),
+            nombre=nombre_edificio,
+            estadoEdificio=Edificio.EstadoEdificio.BLOQUEADO,
+            puntuacionEdificio=0,
+        )
+
+    return [existentes[nombre] for nombre in NOMBRES_EDIFICIOS_REHABILITACION]
+
+
+def _activar_siguiente_bloqueado(edificios: list[Edificio]) -> str | None:
+    for edificio in edificios:
+        if edificio.estadoEdificio == Edificio.EstadoEdificio.EN_CURSO:
+            return edificio.nombre
+
+    for edificio in edificios:
+        if edificio.estadoEdificio == Edificio.EstadoEdificio.BLOQUEADO:
+            edificio.estadoEdificio = Edificio.EstadoEdificio.EN_CURSO
+            edificio.save(update_fields=['estadoEdificio'])
+            return edificio.nombre
+
+    return None
+
+
+def _actualizar_estado_rehabilitacion(rehabilitacion: Rehabilitacion, edificios: list[Edificio]) -> None:
+    puntuacion_total = sum(int(e.puntuacionEdificio or 0) for e in edificios)
+    todos_restaurados = all(e.estadoEdificio == Edificio.EstadoEdificio.RESTAURADO for e in edificios)
+
+    update_fields = ['puntuacionRehabilitacion']
+    rehabilitacion.puntuacionRehabilitacion = puntuacion_total
+
+    if todos_restaurados:
+        rehabilitacion.estado = Rehabilitacion.EstadoRehabilitacion.FINALIZADO
+        rehabilitacion.fechaFin = timezone.now()
+        update_fields.extend(['estado', 'fechaFin'])
+    elif rehabilitacion.estado != Rehabilitacion.EstadoRehabilitacion.EN_CURSO:
+        rehabilitacion.estado = Rehabilitacion.EstadoRehabilitacion.EN_CURSO
+        rehabilitacion.fechaFin = None
+        update_fields.extend(['estado', 'fechaFin'])
+
+    rehabilitacion.save(update_fields=update_fields)
+
+
+def _ajustes_calibracion_paciente(usuario) -> AjustesPaciente:
+    ajustes, _ = AjustesPaciente.objects.get_or_create(
+        paciente=usuario,
+        defaults={
+            'esta_calibrado': False,
+            'sensibilidad': 1.0,
+        },
+    )
+    return ajustes
 
 
 @api_view(['GET'])
@@ -290,27 +363,41 @@ def iniciar_rehabilitacion_paciente(request):
             status=status.HTTP_403_FORBIDDEN,
         )
 
+    ajustes = _ajustes_calibracion_paciente(request.user)
+    if not ajustes.esta_calibrado:
+        return Response(
+            {'error': 'Debes calibrar la mirada en Ajustes antes de iniciar una rehabilitación'},
+            status=status.HTTP_409_CONFLICT,
+        )
+
     progreso, _ = Progreso.objects.get_or_create(paciente=request.user)
+    rehabilitacion_activa = Rehabilitacion.objects.filter(
+        progreso=progreso,
+        estado=Rehabilitacion.EstadoRehabilitacion.EN_CURSO,
+    ).order_by('-fechaInicio', '-idRehabilitacion').first()
+
+    if rehabilitacion_activa is not None:
+        edificios = _asegurar_edificios_rehabilitacion(rehabilitacion_activa)
+        siguiente = _activar_siguiente_bloqueado(edificios)
+        return Response(
+            {
+                'idRehabilitacion': rehabilitacion_activa.idRehabilitacion,
+                'estado': rehabilitacion_activa.estado,
+                'fechaInicio': rehabilitacion_activa.fechaInicio.isoformat() if rehabilitacion_activa.fechaInicio else None,
+                'puntuacionRehabilitacion': rehabilitacion_activa.puntuacionRehabilitacion,
+                'siguienteEdificio': siguiente,
+            },
+            status=status.HTTP_200_OK,
+        )
+
     with transaction.atomic():
         rehabilitacion = Rehabilitacion.objects.create(
             progreso=progreso,
             estado=Rehabilitacion.EstadoRehabilitacion.EN_CURSO,
             puntuacionRehabilitacion=0,
         )
-
-        minijuegos_por_nombre = {
-            m.nombre.strip().lower(): m
-            for m in Minijuego.objects.all()
-        }
-
-        for nombre_edificio in NOMBRES_EDIFICIOS_REHABILITACION:
-            Edificio.objects.create(
-                rehabilitacion=rehabilitacion,
-                minijuego=minijuegos_por_nombre.get(str(nombre_edificio).strip().lower()),
-                nombre=nombre_edificio,
-                estadoEdificio=Edificio.EstadoEdificio.BLOQUEADO,
-                puntuacionEdificio=0,
-            )
+        edificios = _asegurar_edificios_rehabilitacion(rehabilitacion)
+        siguiente = _activar_siguiente_bloqueado(edificios)
 
     return Response(
         {
@@ -318,6 +405,7 @@ def iniciar_rehabilitacion_paciente(request):
             'estado': rehabilitacion.estado,
             'fechaInicio': rehabilitacion.fechaInicio.isoformat() if rehabilitacion.fechaInicio else None,
             'puntuacionRehabilitacion': rehabilitacion.puntuacionRehabilitacion,
+            'siguienteEdificio': siguiente,
         },
         status=status.HTTP_201_CREATED,
     )
@@ -330,6 +418,13 @@ def registrar_puntuacion_minijuego_paciente(request):
         return Response(
             {'error': 'Solo pacientes pueden registrar puntuaciones'},
             status=status.HTTP_403_FORBIDDEN,
+        )
+
+    ajustes = _ajustes_calibracion_paciente(request.user)
+    if not ajustes.esta_calibrado:
+        return Response(
+            {'error': 'Debes calibrar la mirada en Ajustes antes de jugar'},
+            status=status.HTTP_409_CONFLICT,
         )
 
     nombre_edificio = (request.data.get('edificio') or '').strip().lower()
@@ -374,33 +469,51 @@ def registrar_puntuacion_minijuego_paciente(request):
         return Response({'error': 'No hay una rehabilitación en curso'}, status=status.HTTP_400_BAD_REQUEST)
 
     with transaction.atomic():
-        edificio = (
-            Edificio.objects
-            .select_for_update()
-            .filter(rehabilitacion=rehabilitacion, nombre=nombre_edificio)
-            .first()
-        )
+        Rehabilitacion.objects.select_for_update().filter(idRehabilitacion=rehabilitacion.idRehabilitacion).exists()
+        edificios = _asegurar_edificios_rehabilitacion(rehabilitacion)
+        edificios_por_nombre = {e.nombre: e for e in edificios}
+        edificio = edificios_por_nombre.get(nombre_edificio)
 
         if edificio is None:
-            minijuego = Minijuego.objects.filter(nombre__iexact=nombre_edificio).first()
-            edificio = Edificio.objects.create(
-                rehabilitacion=rehabilitacion,
-                minijuego=minijuego,
-                nombre=nombre_edificio,
-                estadoEdificio=Edificio.EstadoEdificio.BLOQUEADO,
-                puntuacionEdificio=0,
+            return Response({'error': 'El edificio indicado no pertenece a la rehabilitación'}, status=status.HTTP_400_BAD_REQUEST)
+
+        edificio_en_curso = next(
+            (e for e in edificios if e.estadoEdificio == Edificio.EstadoEdificio.EN_CURSO),
+            None,
+        )
+        if edificio_en_curso is None:
+            _activar_siguiente_bloqueado(edificios)
+            edificio_en_curso = next(
+                (e for e in edificios if e.estadoEdificio == Edificio.EstadoEdificio.EN_CURSO),
+                None,
+            )
+
+        if edificio_en_curso is not None and edificio_en_curso.nombre != nombre_edificio:
+            return Response(
+                {
+                    'error': 'Debes jugar primero el edificio en curso',
+                    'edificioEnCurso': edificio_en_curso.nombre,
+                },
+                status=status.HTTP_409_CONFLICT,
             )
 
         edificio.puntuacionEdificio = puntuacion
         edificio.estadoEdificio = _estado_edificio_por_puntuacion(puntuacion)
         edificio.save(update_fields=['puntuacionEdificio', 'estadoEdificio'])
 
-        puntuacion_total = sum(
-            Edificio.objects.filter(rehabilitacion=rehabilitacion)
-            .values_list('puntuacionEdificio', flat=True)
-        )
-        rehabilitacion.puntuacionRehabilitacion = puntuacion_total
-        rehabilitacion.save(update_fields=['puntuacionRehabilitacion'])
+        if edificio.estadoEdificio == Edificio.EstadoEdificio.RESTAURADO:
+            _activar_siguiente_bloqueado(edificios)
+
+        _actualizar_estado_rehabilitacion(rehabilitacion, edificios)
+
+        edificios_payload = [
+            {
+                'nombre': e.nombre,
+                'estado': e.estadoEdificio,
+                'puntuacion': e.puntuacionEdificio,
+            }
+            for e in edificios
+        ]
 
     return Response(
         {
@@ -408,7 +521,10 @@ def registrar_puntuacion_minijuego_paciente(request):
             'edificio': nombre_edificio,
             'puntuacionEdificio': edificio.puntuacionEdificio,
             'estadoEdificio': edificio.estadoEdificio,
+            'estadoRehabilitacion': rehabilitacion.estado,
             'puntuacionRehabilitacion': rehabilitacion.puntuacionRehabilitacion,
+            'edificios': edificios_payload,
+            'siguienteEdificio': _siguiente_edificio(edificios_payload),
         },
         status=status.HTTP_200_OK,
     )
@@ -419,6 +535,13 @@ def registrar_puntuacion_minijuego_paciente(request):
 def detalle_rehabilitacion_paciente(request, id_rehabilitacion):
     if request.user.rol != 'paciente':
         return Response({'error': 'Solo pacientes pueden consultar este recurso'}, status=status.HTTP_403_FORBIDDEN)
+
+    ajustes = _ajustes_calibracion_paciente(request.user)
+    if not ajustes.esta_calibrado:
+        return Response(
+            {'error': 'Debes calibrar la mirada en Ajustes antes de continuar la rehabilitación'},
+            status=status.HTTP_409_CONFLICT,
+        )
 
     progreso = Progreso.objects.filter(paciente=request.user).first()
     if progreso is None:
@@ -434,25 +557,18 @@ def detalle_rehabilitacion_paciente(request, id_rehabilitacion):
     if rehabilitacion.estado != Rehabilitacion.EstadoRehabilitacion.EN_CURSO:
         return Response({'error': 'Solo se puede continuar rehabilitaciones en curso'}, status=status.HTTP_400_BAD_REQUEST)
 
-    edificios_map = {
-        e.nombre: e
-        for e in Edificio.objects.filter(rehabilitacion=rehabilitacion)
-    }
-    edificios = []
-    for nombre in NOMBRES_EDIFICIOS_REHABILITACION:
-        e = edificios_map.get(nombre)
-        if e is None:
-            edificios.append({
-                'nombre': nombre,
-                'estado': Edificio.EstadoEdificio.BLOQUEADO,
-                'puntuacion': 0,
-            })
-            continue
-        edificios.append({
-            'nombre': e.nombre,
-            'estado': e.estadoEdificio,
-            'puntuacion': e.puntuacionEdificio,
-        })
+    with transaction.atomic():
+        Rehabilitacion.objects.select_for_update().filter(idRehabilitacion=rehabilitacion.idRehabilitacion).exists()
+        edificios_model = _asegurar_edificios_rehabilitacion(rehabilitacion)
+        _activar_siguiente_bloqueado(edificios_model)
+        edificios = [
+            {
+                'nombre': e.nombre,
+                'estado': e.estadoEdificio,
+                'puntuacion': e.puntuacionEdificio,
+            }
+            for e in edificios_model
+        ]
 
     return Response(
         {

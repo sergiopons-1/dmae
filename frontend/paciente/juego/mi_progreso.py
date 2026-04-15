@@ -37,6 +37,9 @@ class MiProgreso(QWidget):
                                                           tamano=12, accion=self.iniciar_rehabilitacion)
         content_layout.addWidget(self.iniciar_nueva_rehabilitacion, alignment=Qt.AlignmentFlag.AlignHCenter)
 
+        self.label_error = TextoInicio(label="", tamano=11, error=True)
+        content_layout.addWidget(self.label_error, alignment=Qt.AlignmentFlag.AlignHCenter)
+
         self.tabla_progreso = TablaPacientes(
             columnas=5,
             min_height=420,
@@ -119,11 +122,20 @@ class MiProgreso(QWidget):
     def iniciar_rehabilitacion(self):
         token = getattr(self.router, "auth_token", None)
         if not token:
+            self.label_error.setText("Sesión no válida")
             return
 
         status_code, data = iniciar_rehabilitacion(token)
-        if status_code == 201:
+        if status_code in (200, 201):
+            self.label_error.setText("")
             if isinstance(data, dict) and hasattr(self.router, "set_rehabilitacion_activa"):
                 self.router.set_rehabilitacion_activa(data.get("idRehabilitacion"))
             self._cargar_datos_reales()
             self.router.show_pantalla_pueblo()
+            return
+
+        if isinstance(data, dict):
+            self.label_error.setText(data.get("error", "No se pudo iniciar la rehabilitación"))
+            return
+
+        self.label_error.setText("No se pudo iniciar la rehabilitación")

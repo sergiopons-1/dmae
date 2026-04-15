@@ -101,6 +101,7 @@ class IniciarSesion(QDialog, BeigeBg):
                     email=email,
                     dni=data.get('dni', ''),
                     birth_date=data.get('birth_date', ''),
+                    paciente_id=data.get('id'),
                 )
                 if data.get('force_password_change', False):
                     self.router.show_cambiar_contrasena(force_password_change=True)

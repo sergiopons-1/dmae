@@ -7,10 +7,10 @@ from django.utils import timezone
  
 from usuarios.models import Clinica, Usuario, Especialista, Paciente
 from juego.models import Minijuego, Progreso, Rehabilitacion, Edificio, Notas
-from eye_tracking.models import AjustesPaciente, SesionGaze
+from eye_tracking.models import AjustesPaciente
  
  
-GESTOS = ['Guiño ojo izquierdo', 'Abrir la boca', 'Cerrar los dos ojos']
+GESTOS = ['fijacion', 'parpadeo']
  
 NOMBRES_EDIFICIOS = ['biblioteca', 'huerto', 'museo', 'mercadillo', 'campanario']
  
@@ -123,10 +123,8 @@ class Command(BaseCommand):
             obj, created = AjustesPaciente.objects.get_or_create(
                 paciente=pac.usuario,
                 defaults={
-                    'esta_calibrado':   random.choice([True, False]),
-                    'gesto_clic':       random.choice(GESTOS),
-                    'gesto_doble_clic': random.choice(GESTOS),
-                    'sensibilidad':     round(random.uniform(0.5, 2.0), 2),
+                    'esta_calibrado': random.choice([True, False]),
+                    'sensibilidad': round(random.uniform(0.5, 2.0), 2),
                 }
             )
             if created:
@@ -143,7 +141,7 @@ class Command(BaseCommand):
                 self.stdout.write(f'  ✔ Minijuego: {nombre}')
         return minijuegos
  
-    # Rehabilitaciones + Edificios + Notas + SesionGaze
+    # Rehabilitaciones + Edificios + Notas
     def crear_rehabilitaciones(self, pacientes, especialistas, minijuegos):
         for pac in pacientes:
             # Progreso: uno por paciente (OneToOne con Usuario)
@@ -185,16 +183,6 @@ class Command(BaseCommand):
                         puntuacionEdificio=puntuacion_ed,
                     )
  
-                # Datos de eye tracking para esta rehabilitación
-                for _ in range(random.randint(5, 15)):
-                    SesionGaze.objects.create(
-                        rehabilitacion=rehab,
-                        pos_x=round(random.uniform(0, 1920), 2),
-                        pos_y=round(random.uniform(0, 1080), 2),
-                        tipo_evento=random.choice(SesionGaze.TipoEvento.values),
-                        duracion_ms=random.randint(50, 800),
-                    )
- 
                 # Notas del especialista sobre el progreso
                 for _ in range(random.randint(1, 3)):
                     Notas.objects.create(
@@ -211,7 +199,6 @@ class Command(BaseCommand):
  
         # ── Limpieza previa (orden inverso a las FK) ──────────────────────
         self.stdout.write(self.style.WARNING('▶ Borrando datos existentes...'))
-        SesionGaze.objects.all().delete()
         Notas.objects.all().delete()
         Edificio.objects.all().delete()
         Rehabilitacion.objects.all().delete()
@@ -240,7 +227,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.MIGRATE_LABEL('▶ Minijuegos'))
         minijuegos = self.crear_minijuegos()
  
-        self.stdout.write(self.style.MIGRATE_LABEL('▶ Rehabilitaciones / Edificios / Notas / SesionGaze'))
+        self.stdout.write(self.style.MIGRATE_LABEL('▶ Rehabilitaciones / Edificios / Notas'))
         self.crear_rehabilitaciones(pacientes, especialistas, minijuegos)
  
         self.stdout.write(self.style.SUCCESS('\n✅ Base de datos poblada correctamente.\n'))

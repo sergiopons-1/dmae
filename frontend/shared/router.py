@@ -23,7 +23,8 @@ from paciente.juego.rehabilitaciones.pantalla_inicial_juego import PantallaPuebl
 from paciente.juego.rehabilitaciones.pantalla_fin_rehabilitacion import PantallaFinRehabilitacion
 from paciente.juego.rehabilitaciones.minijuegos.huerto.inicio_huerto import BibliotecaCompletada
 from shared.widgets.juego.biblioteca.biblioteca import BibliotecaWidget
-
+from eye_tracking.eye_tracking_controller import EyeTrackingController
+from eye_tracking.persistencia_local import cargar_user_settings
 
 from api_cliente import (
     logout as logout_api,
@@ -31,6 +32,7 @@ from api_cliente import (
     obtener_detalle_rehabilitacion,
     set_auth_expired_handler,
 )
+
 
 
 
@@ -51,8 +53,12 @@ class Router(QMainWindow):
         self.paciente_nombre = "Paciente"
         self.paciente_username = ""
         self.paciente_email = ""
+        self.paciente_id = None
         self.rehabilitacion_activa_id = None
         self.rehabilitacion_activa_detalle = {}
+        
+        # Eye tracking controller
+        self.eye_tracking_controller = None
 
         self.setWindowTitle("Pueblo a la Vista")
         logo_path = Path(__file__).resolve().parents[1] / "assets" / "images" / "logo.png"
@@ -184,7 +190,7 @@ class Router(QMainWindow):
         self.clinic_id = clinic_id
         self._sync_specialist_name()
     
-    def set_patient_session(self, token: str, refresh_token: str = "", username: str = "", nombre: str = "", dni: str = "", email: str = "", birth_date: str = ""):
+    def set_patient_session(self, token: str, refresh_token: str = "", username: str = "", nombre: str = "", dni: str = "", email: str = "", birth_date: str = "", paciente_id=None):
         self.auth_token = token
         self.refresh_token = refresh_token or ""
         self.user_rol = 'paciente'
@@ -193,6 +199,7 @@ class Router(QMainWindow):
         self.paciente_dni = dni or ""
         self.paciente_email = email or ""
         self.birth_date = birth_date or ""
+        self.paciente_id = paciente_id
         self._sync_patient_name()
 
     def clear_specialist_session(self):
@@ -214,8 +221,10 @@ class Router(QMainWindow):
         self.paciente_dni = ""
         self.paciente_email = ""
         self.birth_date = ""
+        self.paciente_id = None
         self.rehabilitacion_activa_id = None
         self.rehabilitacion_activa_detalle = {}
+        self._detener_eye_tracking()
         self._sync_patient_name()
 
     def logout_specialist_session(self):
@@ -321,6 +330,8 @@ class Router(QMainWindow):
 
     #Juego
     def show_pantalla_pueblo(self):
+        # Detener eye tracking cuando vuelve al pueblo
+        self._detener_eye_tracking()
         self.stack.setCurrentWidget(self.pantalla_pueblo)
 
     def set_rehabilitacion_activa(self, id_rehabilitacion: int | None):
@@ -347,9 +358,16 @@ class Router(QMainWindow):
     def show_biblioteca(self):
         if hasattr(self.pantalla_biblioteca, "reiniciar_partida"):
             self.pantalla_biblioteca.reiniciar_partida()
+        
+        # Iniciar eye tracking para controlar el ratón con la mirada
+        self._iniciar_eye_tracking()
+        
         self.stack.setCurrentWidget(self.pantalla_biblioteca)
 
     def show_inicio_huerto(self, puntuacion_biblioteca: int = 0):
+        # Detener eye tracking cuando avanza a la siguiente zona
+        self._detener_eye_tracking()
+        
         if hasattr(self.inicio_huerto, "set_puntuacion_biblioteca"):
             self.inicio_huerto.set_puntuacion_biblioteca(puntuacion_biblioteca)
         self.stack.setCurrentWidget(self.inicio_huerto)
@@ -389,6 +407,9 @@ class Router(QMainWindow):
         self.show_biblioteca()
 
     def show_pantalla_fin_rehabilitacion(self, libros_colocados: int):
+        # Detener eye tracking cuando termina la rehabilitación
+        self._detener_eye_tracking()
+        
         # Biblioteca puntua de 0 a 3, que coincide con puntuacionEdificio.
         if libros_colocados <= 1:
             puntos_minijuego = 0
@@ -410,3 +431,32 @@ class Router(QMainWindow):
         if hasattr(self.pantalla_fin_rehabilitacion, "set_resultado"):
             self.pantalla_fin_rehabilitacion.set_resultado(libros_colocados)
         self.stack.setCurrentWidget(self.pantalla_fin_rehabilitacion)
+
+    # Eye Tracking methods
+    def _iniciar_eye_tracking(self, widget_area=None):
+        """Inicia el eye tracking during una rehabilitación."""
+        if self.paciente_id is None:
+            return False
+        
+        # Obtener sensibilidad guardada
+        configuracion = cargar_user_settings(self.paciente_id)
+        sensibilidad = configuracion.get("sensibilidad", 1.0) if configuracion else 1.0
+        
+        self.eye_tracking_controller = EyeTrackingController(
+            sensibilidad=sensibilidad,
+            paciente_id=self.paciente_id
+        )
+        
+        if self.eye_tracking_controller.iniciar(widget_area):
+            return True
+        else:
+            self.eye_tracking_controller = None
+            return False
+    
+    def _detener_eye_tracking(self):
+        """Detiene el eye tracking."""
+        if self.eye_tracking_controller is not None:
+            self.eye_tracking_controller.detector.establecer_matriz_calibracion(None)
+            self.eye_tracking_controller.detector.limpiar_calibracion()
+            self.eye_tracking_controller.detener()
+            self.eye_tracking_controller = None

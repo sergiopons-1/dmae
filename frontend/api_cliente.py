@@ -2,6 +2,7 @@ import requests
 
 BASE_URL = "http://127.0.0.1:8000/api/usuarios"
 BASE_URL_API = "http://127.0.0.1:8000/api"
+BASE_URL_EYE = "http://127.0.0.1:8000/api/eye-tracking"
 
 _AUTH_EXPIRED_HANDLER = None
 
@@ -267,6 +268,48 @@ def registrar_puntuacion_minijuego(edificio, puntuacion, token=None, id_rehabili
         r = requests.post(
             f"{BASE_URL}/registrar-puntuacion-minijuego/",
             json=body,
+            headers=headers,
+            timeout=8,
+        )
+        if r.status_code == 401:
+            _notify_auth_expired()
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
+
+
+def obtener_ajustes_calibracion(token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.get(
+            f"{BASE_URL_EYE}/ajustes/",
+            headers=headers,
+            timeout=8,
+        )
+        if r.status_code == 401:
+            _notify_auth_expired()
+        payload = _normalize_error_payload(r.status_code, r.json())
+        return r.status_code, payload
+    except requests.exceptions.RequestException as exc:
+        return _network_error_response(exc)
+
+
+def guardar_ajustes_calibracion(esta_calibrado=True, sensibilidad=1.0, token=None):
+    try:
+        headers = {}
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+
+        r = requests.post(
+            f"{BASE_URL_EYE}/calibracion/",
+            json={
+                "esta_calibrado": bool(esta_calibrado),
+                "sensibilidad": sensibilidad,
+            },
             headers=headers,
             timeout=8,
         )
