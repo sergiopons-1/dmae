@@ -169,7 +169,7 @@ class GameCanvas(QWidget):
         origen_x = (self.width() - ancho) // 2
         origen_y = (self.height() - alto) // 2
         self._origen_contenido = QPoint(origen_x, origen_y)
-
+        
         if hasattr(self, "_fondo"):
             pixmap = QPixmap("assets/images/juego/edificios/biblioteca/biblioteca_vacia.png")
             self._fondo.setGeometry(origen_x, origen_y, ancho, alto)
