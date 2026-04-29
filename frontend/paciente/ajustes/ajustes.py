@@ -279,6 +279,24 @@ class Ajustes(QWidget):
         self.selector_sensibilidad.addItem("Muy alta (1.5)", 1.5)
         self.selector_sensibilidad.setCurrentIndex(1)
         self.selector_sensibilidad.setFixedWidth(240)
+        self.selector_sensibilidad.setStyleSheet("""
+            QComboBox {
+                color: #0E4C66;
+                background-color: white;
+                border: 1px solid #0E4C66;
+                border-radius: 4px;
+                padding: 5px;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox QAbstractItemView {
+                color: #0E4C66;
+                background-color: white;
+                selection-background-color: #0E4C66;
+                selection-color: white;
+            }
+        """)
 
         self.btn_iniciar = PrimaryButton(text="Iniciar calibración", tamano=12, accion=self.iniciar_calibracion)
 
