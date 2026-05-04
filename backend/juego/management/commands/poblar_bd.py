@@ -27,7 +27,6 @@ CONTENIDOS_NOTAS = [
 class Command(BaseCommand):
     #Clínicas
     def crear_clinicas(self):
-        self.stdout.write(self.style.SUCCESS('▶ Creando clínicas...'))
         datos = [
             {'nombre': 'Clínica Sevilla Centro', 'direccion': 'Calle Sierpes 10',  'codigoPostal': '41001'},
             {'nombre': 'Clínica Norte',           'direccion': 'Av. Kansas City 5', 'codigoPostal': '41013'},
@@ -37,8 +36,6 @@ class Command(BaseCommand):
         for d in datos:
             obj, created = Clinica.objects.get_or_create(nombre=d['nombre'], defaults=d)
             clinicas.append(obj)
-            if created:
-                self.stdout.write(f'  ✔ Clínica: {obj.nombre}')
         return clinicas
     
     #Especialistas
@@ -68,8 +65,6 @@ class Command(BaseCommand):
                 usuario=usuario
             )
             especialistas.append(esp)
-            if created:
-                self.stdout.write(f'  ✔ Especialista: {usuario.get_full_name()} - Clínica: {clinica_asignada.nombre}')
         return especialistas
  
     # Pacientes
@@ -111,8 +106,6 @@ class Command(BaseCommand):
                 }
             )
             pacientes.append(pac)
-            if created:
-                self.stdout.write(f'  ✔ Paciente: {usuario.get_full_name()} - Clínica: {clinica_asignada.nombre}')
         return pacientes
  
     # Ajustes de paciente (eye_tracking)
@@ -125,8 +118,6 @@ class Command(BaseCommand):
                     'sensibilidad': round(random.uniform(0.5, 2.0), 2),
                 }
             )
-            if created:
-                self.stdout.write(f'  ✔ Ajustes para: {pac.usuario.get_full_name()}')
  
 
  
@@ -179,14 +170,9 @@ class Command(BaseCommand):
                         contenido=random.choice(CONTENIDOS_NOTAS),
                     )
  
-            self.stdout.write(f'  ✔ Rehabs + edificios + notas para: {pac.usuario.get_full_name()}')
- 
     # Entry point
     def handle(self, *args, **kwargs):
-        self.stdout.write(self.style.MIGRATE_HEADING('\n══════ Poblando base de datos ══════\n'))
- 
         # ── Limpieza previa (orden inverso a las FK) ──────────────────────
-        self.stdout.write(self.style.WARNING('▶ Borrando datos existentes...'))
         Notas.objects.all().delete()
         Edificio.objects.all().delete()
         Rehabilitacion.objects.all().delete()
@@ -196,22 +182,12 @@ class Command(BaseCommand):
         Especialista.objects.all().delete()
         Usuario.objects.filter(is_superuser=False).delete()  # conserva superusuarios
         Clinica.objects.all().delete()
-        self.stdout.write(self.style.WARNING('Base de datos limpia\n'))
-        # ─────────────────────────────────────────────────────────────────
- 
-        self.stdout.write(self.style.MIGRATE_LABEL('▶ Clínicas'))
+
         clinicas = self.crear_clinicas()
- 
-        self.stdout.write(self.style.MIGRATE_LABEL('▶ Especialistas'))
         especialistas = self.crear_especialistas(clinicas)
- 
-        self.stdout.write(self.style.MIGRATE_LABEL('▶ Pacientes'))
         pacientes = self.crear_pacientes(especialistas)
- 
-        self.stdout.write(self.style.MIGRATE_LABEL('▶ Ajustes de paciente'))
         self.crear_ajustes(pacientes)
  
-        self.stdout.write(self.style.MIGRATE_LABEL('▶ Rehabilitaciones / Edificios / Notas'))
         self.crear_rehabilitaciones(pacientes, especialistas)
  
-        self.stdout.write(self.style.SUCCESS('\n✅ Base de datos poblada correctamente.\n'))
+        self.stdout.write(self.style.SUCCESS('\nBase de datos poblada correctamente.\n'))
