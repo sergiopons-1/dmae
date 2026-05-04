@@ -107,7 +107,7 @@ def obtener_pacientes_clinica(clinic_id, token=None):
             f"{BASE_URL_API}/pacientes/por_clinica/",
             params={"clinic_id": clinic_id},
             headers=headers,
-            timeout=5,
+            timeout=10,
         )
         if r.status_code == 401:
             _notify_auth_expired()
@@ -168,7 +168,7 @@ def obtener_progreso_individual(paciente_id, token=None):
         r = requests.get(
             f"{BASE_URL_API}/pacientes/{paciente_id}/progreso_individual/",
             headers=headers,
-            timeout=8,
+            timeout=10,
         )
         if r.status_code == 401:
             _notify_auth_expired()
@@ -207,7 +207,7 @@ def obtener_mi_progreso(token=None):
         r = requests.get(
             f"{BASE_URL}/mi-progreso/",
             headers=headers,
-            timeout=8,
+            timeout=10,
         )
         if r.status_code == 401:
             _notify_auth_expired()
@@ -226,7 +226,7 @@ def iniciar_rehabilitacion(token=None):
         r = requests.post(
             f"{BASE_URL}/iniciar-rehabilitacion/",
             headers=headers,
-            timeout=8,
+            timeout=10,
         )
         if r.status_code == 401:
             _notify_auth_expired()
@@ -245,7 +245,7 @@ def obtener_detalle_rehabilitacion(id_rehabilitacion, token=None):
         r = requests.get(
             f"{BASE_URL}/rehabilitacion/{id_rehabilitacion}/detalle/",
             headers=headers,
-            timeout=8,
+            timeout=10,
         )
         if r.status_code == 401:
             _notify_auth_expired()
@@ -269,7 +269,7 @@ def registrar_puntuacion_edificio(edificio, puntuacion, token=None, id_rehabilit
             f"{BASE_URL}/registrar-puntuacion-edificio/",
             json=body,
             headers=headers,
-            timeout=8,
+            timeout=10,
         )
         if r.status_code == 401:
             _notify_auth_expired()
@@ -288,7 +288,7 @@ def obtener_ajustes_calibracion(token=None):
         r = requests.get(
             f"{BASE_URL_EYE}/ajustes/",
             headers=headers,
-            timeout=8,
+            timeout=10,
         )
         if r.status_code == 401:
             _notify_auth_expired()
@@ -311,7 +311,7 @@ def guardar_ajustes_calibracion(esta_calibrado=True, sensibilidad=1.0, token=Non
                 "sensibilidad": sensibilidad,
             },
             headers=headers,
-            timeout=8,
+            timeout=10,
         )
         if r.status_code == 401:
             _notify_auth_expired()
