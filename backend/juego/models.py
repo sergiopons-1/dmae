@@ -2,12 +2,7 @@ from django.db import models
 from usuarios.models import Usuario
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-class Minijuego(models.Model):
-    idMinijuego = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=255, unique=True)
 
-    class Meta:
-        db_table = "minijuego"
 
 class Progreso(models.Model):
     idProgreso = models.AutoField(primary_key=True)
@@ -48,7 +43,6 @@ class Edificio(models.Model):
 
     idEdificio = models.AutoField(primary_key=True)
     rehabilitacion = models.ForeignKey(Rehabilitacion, on_delete=models.CASCADE)
-    minijuego = models.ForeignKey(Minijuego, on_delete=models.SET_NULL, null=True)
     nombre = models.CharField(choices=NombreEdificio.choices, default=NombreEdificio.BIBLIOTECA)
     estadoEdificio = models.CharField(choices=EstadoEdificio.choices, default=EstadoEdificio.BLOQUEADO)
     puntuacionEdificio = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(3)])

@@ -28,7 +28,7 @@ from eye_tracking.persistencia_local import cargar_user_settings
 
 from api_cliente import (
     logout as logout_api,
-    registrar_puntuacion_minijuego,
+    registrar_puntuacion_edificio,
     obtener_detalle_rehabilitacion,
     set_auth_expired_handler,
 )
@@ -421,7 +421,7 @@ class Router(QMainWindow):
             puntos_minijuego = 3
 
         if self.auth_token:
-            registrar_puntuacion_minijuego(
+            registrar_puntuacion_edificio(
                 edificio="biblioteca",
                 puntuacion=puntos_minijuego,
                 token=self.auth_token,

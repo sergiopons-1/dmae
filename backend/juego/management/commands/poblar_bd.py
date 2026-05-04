@@ -6,12 +6,10 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
  
 from usuarios.models import Clinica, Usuario, Especialista, Paciente
-from juego.models import Minijuego, Progreso, Rehabilitacion, Edificio, Notas
+from juego.models import Progreso, Rehabilitacion, Edificio, Notas
 from eye_tracking.models import AjustesPaciente
  
- 
-GESTOS = ['fijacion', 'parpadeo']
- 
+  
 NOMBRES_EDIFICIOS = ['biblioteca', 'huerto', 'museo', 'mercadillo', 'campanario']
  
 CONTENIDOS_NOTAS = [
@@ -21,7 +19,7 @@ CONTENIDOS_NOTAS = [
     'Excelente progreso esta semana.',
     'Revisar calibración del dispositivo en la próxima visita.',
     'El paciente completó todos los edificios sin ayuda.',
-    'Se observa dificultad con el minijuego de campanario.',
+    'Se observa dificultad con el edificio de campanario.',
     'Sesión suspendida por indisposición del paciente.',
 ]
  
@@ -130,19 +128,10 @@ class Command(BaseCommand):
             if created:
                 self.stdout.write(f'  ✔ Ajustes para: {pac.usuario.get_full_name()}')
  
-    # Minijuegos
-    def crear_minijuegos(self):
-        nombres = ['Biblioteca', 'Huerto', 'Museo', 'Mercadillo', 'Campanario']
-        minijuegos = []
-        for nombre in nombres:
-            obj, created = Minijuego.objects.get_or_create(nombre=nombre)
-            minijuegos.append(obj)
-            if created:
-                self.stdout.write(f'  ✔ Minijuego: {nombre}')
-        return minijuegos
+
  
     # Rehabilitaciones + Edificios + Notas
-    def crear_rehabilitaciones(self, pacientes, especialistas, minijuegos):
+    def crear_rehabilitaciones(self, pacientes, especialistas):
         for pac in pacientes:
             # Progreso: uno por paciente (OneToOne con Usuario)
             progreso, _ = Progreso.objects.get_or_create(paciente=pac.usuario)
@@ -177,7 +166,6 @@ class Command(BaseCommand):
  
                     Edificio.objects.create(
                         rehabilitacion=rehab,
-                        minijuego=random.choice(minijuegos),
                         nombre=nombre_ed,
                         estadoEdificio=estado_ed,
                         puntuacionEdificio=puntuacion_ed,
@@ -204,7 +192,6 @@ class Command(BaseCommand):
         Rehabilitacion.objects.all().delete()
         Progreso.objects.all().delete()
         AjustesPaciente.objects.all().delete()
-        Minijuego.objects.all().delete()
         Paciente.objects.all().delete()
         Especialista.objects.all().delete()
         Usuario.objects.filter(is_superuser=False).delete()  # conserva superusuarios
@@ -224,10 +211,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.MIGRATE_LABEL('▶ Ajustes de paciente'))
         self.crear_ajustes(pacientes)
  
-        self.stdout.write(self.style.MIGRATE_LABEL('▶ Minijuegos'))
-        minijuegos = self.crear_minijuegos()
- 
         self.stdout.write(self.style.MIGRATE_LABEL('▶ Rehabilitaciones / Edificios / Notas'))
-        self.crear_rehabilitaciones(pacientes, especialistas, minijuegos)
+        self.crear_rehabilitaciones(pacientes, especialistas)
  
         self.stdout.write(self.style.SUCCESS('\n✅ Base de datos poblada correctamente.\n'))

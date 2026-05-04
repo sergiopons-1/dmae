@@ -255,7 +255,7 @@ def obtener_detalle_rehabilitacion(id_rehabilitacion, token=None):
         return _network_error_response(exc)
 
 
-def registrar_puntuacion_minijuego(edificio, puntuacion, token=None, id_rehabilitacion=None):
+def registrar_puntuacion_edificio(edificio, puntuacion, token=None, id_rehabilitacion=None):
     try:
         headers = {}
         if token:
@@ -266,7 +266,7 @@ def registrar_puntuacion_minijuego(edificio, puntuacion, token=None, id_rehabili
             body["idRehabilitacion"] = id_rehabilitacion
 
         r = requests.post(
-            f"{BASE_URL}/registrar-puntuacion-minijuego/",
+            f"{BASE_URL}/registrar-puntuacion-edificio/",
             json=body,
             headers=headers,
             timeout=8,

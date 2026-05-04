@@ -16,7 +16,7 @@ from django.core.validators import validate_email
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
 from usuarios.models import Usuario, Especialista, Paciente, Clinica
-from juego.models import Progreso, Rehabilitacion, Edificio, Minijuego
+from juego.models import Progreso, Rehabilitacion, Edificio
 from eye_tracking.models import AjustesPaciente
 
 ########################################### ESPECIALISTA ####################################################
@@ -255,15 +255,7 @@ def _siguiente_edificio(edificios: list[dict]) -> str | None:
     return None
 
 
-def _minijuegos_por_nombre() -> dict[str, Minijuego]:
-    return {
-        m.nombre.strip().lower(): m
-        for m in Minijuego.objects.all()
-    }
-
-
 def _asegurar_edificios_rehabilitacion(rehabilitacion: Rehabilitacion) -> list[Edificio]:
-    minijuegos = _minijuegos_por_nombre()
     existentes = {
         e.nombre: e
         for e in Edificio.objects.filter(rehabilitacion=rehabilitacion)
@@ -274,7 +266,6 @@ def _asegurar_edificios_rehabilitacion(rehabilitacion: Rehabilitacion) -> list[E
             continue
         existentes[nombre_edificio] = Edificio.objects.create(
             rehabilitacion=rehabilitacion,
-            minijuego=minijuegos.get(str(nombre_edificio).strip().lower()),
             nombre=nombre_edificio,
             estadoEdificio=Edificio.EstadoEdificio.BLOQUEADO,
             puntuacionEdificio=0,
@@ -413,7 +404,7 @@ def iniciar_rehabilitacion_paciente(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def registrar_puntuacion_minijuego_paciente(request):
+def registrar_puntuacion_edificio_paciente(request):
     if request.user.rol != 'paciente':
         return Response(
             {'error': 'Solo pacientes pueden registrar puntuaciones'},
