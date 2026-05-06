@@ -102,8 +102,10 @@ class Router(QMainWindow):
         self.mi_progreso_paciente = MiProgreso(self)
         self.pantalla_pueblo = PantallaPueblo(self)
         self.pantalla_biblioteca = BibliotecaWidget(self)
-        self.pantalla_biblioteca.minijuego_finalizado.connect(self.show_pantalla_fin_rehabilitacion)
+        self.pantalla_biblioteca.minijuego_finalizado.connect(self.show_pantalla_fin_minijuegos)
         self.pantalla_fin_rehabilitacion = PantallaFinRehabilitacion(self)
+            # Alias de compatibilidad: antes se llamaba pantalla_fin_minijuegos
+        self.pantalla_fin_minijuegos = self.pantalla_fin_rehabilitacion
         self.inicio_huerto = BibliotecaCompletada(self)
         self.pantalla_fin_rehabilitacion.salir_del_edificio.connect(self._on_fin_salir_del_edificio)
         self.pantalla_fin_rehabilitacion.volver_a_jugar.connect(self._on_fin_volver_a_jugar)
@@ -179,7 +181,7 @@ class Router(QMainWindow):
                 email=self.paciente_email,
                 fecha_nacimiento=self.birth_date,
             )
-
+    #Definicion de las diferentes sesiones
     def set_specialist_session(self, token: str, refresh_token: str = "", nombre: str = "", username: str = "", email: str = "", clinic_id=None):
         self.auth_token = token
         self.refresh_token = refresh_token or ""
@@ -393,15 +395,15 @@ class Router(QMainWindow):
         return 0
 
     def _on_fin_salir_del_edificio(self):
-        if hasattr(self.pantalla_fin_rehabilitacion, "ha_superado") and self.pantalla_fin_rehabilitacion.ha_superado():
-            puntos = self.pantalla_fin_rehabilitacion.puntos_finales() if hasattr(self.pantalla_fin_rehabilitacion, "puntos_finales") else 0
+        if hasattr(self.pantalla_fin_minijuegos, "ha_superado") and self.pantalla_fin_minijuegos.ha_superado():
+            puntos = self.pantalla_fin_minijuegos.puntos_finales() if hasattr(self.pantalla_fin_minijuegos, "puntos_finales") else 0
             self.show_inicio_huerto(puntos)
             return
         self.show_pantalla_pueblo()
 
     def _on_fin_volver_a_jugar(self):
-        if hasattr(self.pantalla_fin_rehabilitacion, "ha_superado") and self.pantalla_fin_rehabilitacion.ha_superado():
-            puntos = self.pantalla_fin_rehabilitacion.puntos_finales() if hasattr(self.pantalla_fin_rehabilitacion, "puntos_finales") else 0
+        if hasattr(self.pantalla_fin_minijuegos, "ha_superado") and self.pantalla_fin_minijuegos.ha_superado():
+            puntos = self.pantalla_fin_minijuegos.puntos_finales() if hasattr(self.pantalla_fin_minijuegos, "puntos_finales") else 0
             self.show_inicio_huerto(puntos)
             return
         self.show_biblioteca()
@@ -432,9 +434,13 @@ class Router(QMainWindow):
             self.pantalla_fin_rehabilitacion.set_resultado(libros_colocados)
         self.stack.setCurrentWidget(self.pantalla_fin_rehabilitacion)
 
-    # Eye Tracking methods
+    def show_pantalla_fin_minijuegos(self, libros_colocados: int):
+        """Alias por compatibilidad con código anterior."""
+        return self.show_pantalla_fin_rehabilitacion(libros_colocados)
+    # Eye Tracking 
+
+    #Inicia el eye tracking durante una rehabilitación.
     def _iniciar_eye_tracking(self, widget_area=None):
-        """Inicia el eye tracking during una rehabilitación."""
         if self.paciente_id is None:
             return False
         
@@ -453,8 +459,8 @@ class Router(QMainWindow):
             self.eye_tracking_controller = None
             return False
     
+    #Detiene el eye tracking.
     def _detener_eye_tracking(self):
-        """Detiene el eye tracking."""
         if self.eye_tracking_controller is not None:
             self.eye_tracking_controller.detector.establecer_matriz_calibracion(None)
             self.eye_tracking_controller.detector.limpiar_calibracion()

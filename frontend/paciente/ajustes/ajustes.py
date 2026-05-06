@@ -8,10 +8,8 @@ import numpy as np
 from api_cliente import guardar_ajustes_calibracion, obtener_ajustes_calibracion
 from eye_tracking.gaze_detector import GazeDetector
 from eye_tracking.persistencia_local import (
-    cargar_scroll_config,
     cargar_user_settings,
     guardar_calibration_matrix,
-    guardar_scroll_config,
     guardar_user_settings,
 )
 from paciente.ajustes.pantalla_calibracion_ojos import PantallaCalibracionOjos
@@ -325,8 +323,7 @@ class Ajustes(QWidget):
                 self.selector_sensibilidad.setCurrentIndex(indice)
                 break
 
-        # Garantiza existencia de scroll_config.json según el modelo 7.2
-        _ = cargar_scroll_config(paciente_id)
+
 
     def iniciar_calibracion(self):
         paciente_id = getattr(self.router, "paciente_id", None)
@@ -340,8 +337,8 @@ class Ajustes(QWidget):
 
         # Persistencia local (modelo 7.2)
         guardar_calibration_matrix(ventana.calibration_matrix, paciente_id=paciente_id)
-        guardar_user_settings(sensibilidad=sensibilidad, scroll_activo=False, paciente_id=paciente_id)
-        guardar_scroll_config(enabled=False, paciente_id=paciente_id)
+        guardar_user_settings(sensibilidad=sensibilidad, paciente_id=paciente_id)
+
 
         # Persistencia remota actual del sistema
         token = getattr(self.router, "auth_token", None)

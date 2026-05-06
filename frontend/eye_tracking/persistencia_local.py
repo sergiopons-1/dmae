@@ -26,10 +26,6 @@ def _user_settings_path(paciente_id=None) -> Path:
     return _patient_dir(paciente_id) / "user_settings.json"
 
 
-def _scroll_config_path(paciente_id=None) -> Path:
-    return _patient_dir(paciente_id) / "scroll_config.json"
-
-
 def _calibration_matrix_path(paciente_id=None) -> Path:
     return _patient_dir(paciente_id) / "calibration_matrix.npy"
 
@@ -61,42 +57,18 @@ def cargar_user_settings(paciente_id=None) -> dict:
             "sensibilidad": 1.0,
             "gesto_clic": "abrir_boca",
             "gesto_doble_clic": None,
-            "scroll_activo": False,
         },
     )
 
 
-def guardar_user_settings(sensibilidad: float, scroll_activo: bool = False, paciente_id=None) -> None:
+def guardar_user_settings(sensibilidad: float, paciente_id=None) -> None:
     payload = {
         "paciente_id": paciente_id,
         "sensibilidad": float(sensibilidad),
         "gesto_clic": "abrir_boca",
         "gesto_doble_clic": None,
-        "scroll_activo": bool(scroll_activo),
     }
     _write_json(_user_settings_path(paciente_id), payload)
-
-
-def cargar_scroll_config(paciente_id=None) -> dict:
-    return _read_json(
-        _scroll_config_path(paciente_id),
-        {
-            "paciente_id": paciente_id,
-            "up_threshold": None,
-            "down_threshold": None,
-            "enabled": False,
-        },
-    )
-
-
-def guardar_scroll_config(up_threshold=None, down_threshold=None, enabled: bool = False, paciente_id=None) -> None:
-    payload = {
-        "paciente_id": paciente_id,
-        "up_threshold": up_threshold,
-        "down_threshold": down_threshold,
-        "enabled": bool(enabled),
-    }
-    _write_json(_scroll_config_path(paciente_id), payload)
 
 
 def guardar_calibration_matrix(matrix: np.ndarray, paciente_id=None) -> None:

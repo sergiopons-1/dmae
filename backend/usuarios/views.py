@@ -19,7 +19,6 @@ from usuarios.models import Usuario, Especialista, Paciente, Clinica
 from juego.models import Progreso, Rehabilitacion, Edificio
 from eye_tracking.models import AjustesPaciente
 
-########################################### ESPECIALISTA ####################################################
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -213,9 +212,6 @@ def cambiar_contrasena(request):
     return Response({'message': 'Contraseña actualizada correctamente'}, status=status.HTTP_200_OK)
 
 
-
-########################################### PACIENTE ####################################################
-
 def _parse_birth_date(value: str):
     for fmt in ('%Y-%m-%d', '%d/%m/%Y'):
         try:
@@ -362,24 +358,6 @@ def iniciar_rehabilitacion_paciente(request):
         )
 
     progreso, _ = Progreso.objects.get_or_create(paciente=request.user)
-    rehabilitacion_activa = Rehabilitacion.objects.filter(
-        progreso=progreso,
-        estado=Rehabilitacion.EstadoRehabilitacion.EN_CURSO,
-    ).order_by('-fechaInicio', '-idRehabilitacion').first()
-
-    if rehabilitacion_activa is not None:
-        edificios = _asegurar_edificios_rehabilitacion(rehabilitacion_activa)
-        siguiente = _activar_siguiente_bloqueado(edificios)
-        return Response(
-            {
-                'idRehabilitacion': rehabilitacion_activa.idRehabilitacion,
-                'estado': rehabilitacion_activa.estado,
-                'fechaInicio': rehabilitacion_activa.fechaInicio.isoformat() if rehabilitacion_activa.fechaInicio else None,
-                'puntuacionRehabilitacion': rehabilitacion_activa.puntuacionRehabilitacion,
-                'siguienteEdificio': siguiente,
-            },
-            status=status.HTTP_200_OK,
-        )
 
     with transaction.atomic():
         rehabilitacion = Rehabilitacion.objects.create(

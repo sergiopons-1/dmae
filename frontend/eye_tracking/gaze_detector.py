@@ -1,5 +1,5 @@
 """
-Detección de gaze (mirada) usando MediaPipe Face Mesh y OpenCV.
+Detección de la mirada usando MediaPipe Face Mesh y OpenCV.
 Captura la posición del ojo y la mapea a coordenadas en pantalla.
 """
 
@@ -14,7 +14,7 @@ from eye_tracking.persistencia_local import cargar_calibration_matrix
 
 @dataclass
 class GazePoint:
-    """Punto de gaze en coordenadas normalizadas [0, 1]"""
+    """Punto de mirada en coordenadas normalizadas [0, 1]"""
     x: float  # 0 = izquierda, 1 = derecha
     y: float  # 0 = arriba, 1 = abajo
     confianza: float  # 0-1, qué tan confiable es la detección
@@ -22,7 +22,7 @@ class GazePoint:
 
 class GazeDetector:
     """
-    Detector de gaze usando MediaPipe Face Mesh.
+    Detector de mirada usando MediaPipe Face Mesh.
     Calibración: relación entre puntos iris y posición en pantalla.
     """
     
