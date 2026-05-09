@@ -81,7 +81,7 @@ class RegistrarPaciente(QDialog):
             return
 
         if not USERNAME_RE.match(username):
-            self.label_error.setText("Usuario: solo letras, dígitos y @/./+/-/_")
+            self.label_error.setText("El nombre de usuario debe contener solo letras, dígitos y @/./+/-/_")
             self.label_error.setVisible(True)
             return
 
