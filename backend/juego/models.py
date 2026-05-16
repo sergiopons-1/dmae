@@ -19,7 +19,7 @@ class Rehabilitacion(models.Model):
 
     idRehabilitacion = models.AutoField(primary_key=True)
     progreso = models.ForeignKey(Progreso, on_delete=models.CASCADE)
-    estado = models.CharField(choices=EstadoRehabilitacion.choices, default=EstadoRehabilitacion.PENDIENTE)
+    estado = models.CharField(max_length=20, choices=EstadoRehabilitacion.choices, default=EstadoRehabilitacion.PENDIENTE)
     fechaInicio = models.DateTimeField(auto_now_add=True)
     fechaFin = models.DateTimeField(null=True, blank=True)
     puntuacionRehabilitacion = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(15)])
@@ -43,8 +43,8 @@ class Edificio(models.Model):
 
     idEdificio = models.AutoField(primary_key=True)
     rehabilitacion = models.ForeignKey(Rehabilitacion, on_delete=models.CASCADE)
-    nombre = models.CharField(choices=NombreEdificio.choices, default=NombreEdificio.BIBLIOTECA)
-    estadoEdificio = models.CharField(choices=EstadoEdificio.choices, default=EstadoEdificio.BLOQUEADO)
+    nombre = models.CharField(max_length=20, choices=NombreEdificio.choices, default=NombreEdificio.BIBLIOTECA)
+    estadoEdificio = models.CharField(max_length=20, choices=EstadoEdificio.choices, default=EstadoEdificio.BLOQUEADO)
     puntuacionEdificio = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(3)])
 
     class Meta:

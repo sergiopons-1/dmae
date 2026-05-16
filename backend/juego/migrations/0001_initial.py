@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
             name='Rehabilitacion',
             fields=[
                 ('idRehabilitacion', models.AutoField(primary_key=True, serialize=False)),
-                ('estado', models.CharField(choices=[('pendiente', 'Pendiente'), ('en_curso', 'En curso'), ('finalizado', 'Finalizado')], default='pendiente')),
+                ('estado', models.CharField(max_length=20, choices=[('pendiente', 'Pendiente'), ('en_curso', 'En curso'), ('finalizado', 'Finalizado')], default='pendiente')),
                 ('fechaInicio', models.DateTimeField(auto_now_add=True)),
                 ('fechaFin', models.DateTimeField(blank=True, null=True)),
                 ('puntuacionRehabilitacion', models.IntegerField(default=0, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(15)])),
@@ -60,8 +60,8 @@ class Migration(migrations.Migration):
             name='Edificio',
             fields=[
                 ('idEdificio', models.AutoField(primary_key=True, serialize=False)),
-                ('nombre', models.CharField(choices=[('biblioteca', 'Biblioteca'), ('huerto', 'Huerto'), ('museo', 'Museo'), ('mercadillo', 'Mercadillo'), ('campanario', 'Campanario')], default='biblioteca')),
-                ('estadoEdificio', models.CharField(choices=[('bloqueado', 'Bloqueado'), ('en_curso', 'En curso'), ('restaurado', 'Restaurado')], default='bloqueado')),
+                ('nombre', models.CharField(max_length=20, choices=[('biblioteca', 'Biblioteca'), ('huerto', 'Huerto'), ('museo', 'Museo'), ('mercadillo', 'Mercadillo'), ('campanario', 'Campanario')], default='biblioteca')),
+                ('estadoEdificio', models.CharField(max_length=20, choices=[('bloqueado', 'Bloqueado'), ('en_curso', 'En curso'), ('restaurado', 'Restaurado')], default='bloqueado')),
                 ('puntuacionEdificio', models.IntegerField(default=0, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(3)])),
                 ('minijuego', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='juego.minijuego')),
             ],
