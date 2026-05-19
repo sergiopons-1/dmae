@@ -1,4 +1,4 @@
-# DMAE
+# Desarrollando una herramienta para la rehabilitación de pacientes con DMAE
 
 Aplicación de rehabilitación y seguimiento para personas con DMAE. Está realizada con PyQt6 para frontend, Django para backend y con la base de datos SQLite.
 
